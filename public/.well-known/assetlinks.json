@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.netease.cloudmusic",
+      "sha256_cert_fingerprints": [
+        "291820b77d0fa0879471420874e1f647ec07b72434dd733cc8ce59cbd87f7cbe"
+      ]
+    }
+  }
+]
