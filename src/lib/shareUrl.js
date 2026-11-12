@@ -1,3 +1,4 @@
+// src/lib/shareUrl.js  (WEB — browser)
 const SHARE_BASE = "https://music-rushi.vercel.app";
 
 export function slugify(s) {
@@ -12,13 +13,13 @@ export function slugify(s) {
 
 export function songShareUrl(song) {
   const slug = slugify(song.title) || "song";
-  const id = song.numericId || song.id;
+  const id = encodeURIComponent(String(song.numericId ?? song.id ?? ""));
   return `${SHARE_BASE}/in/song/${slug}/${id}`;
 }
 
 export function albumShareUrl(album) {
   const slug = slugify(album.name) || "album";
-  const id = album.numericId || album.id;
+  const id = encodeURIComponent(String(album.numericId ?? album.id ?? ""));
   return `${SHARE_BASE}/in/album/${slug}/${id}`;
 }
 
@@ -70,10 +71,18 @@ function _toast(msg) {
   const t = document.createElement("div");
   t.textContent = msg;
   Object.assign(t.style, {
-    position: "fixed", bottom: "100px", left: "50%",
-    transform: "translateX(-50%)", background: "#1c1c1e", color: "#fff",
-    padding: "10px 18px", borderRadius: "999px", fontSize: "14px",
-    fontWeight: "600", zIndex: 9999, boxShadow: "0 6px 24px rgba(0,0,0,0.3)",
+    position: "fixed",
+    bottom: "100px",
+    left: "50%",
+    transform: "translateX(-50%)",
+    background: "#1c1c1e",
+    color: "#fff",
+    padding: "10px 18px",
+    borderRadius: "999px",
+    fontSize: "14px",
+    fontWeight: "600",
+    zIndex: 9999,
+    boxShadow: "0 6px 24px rgba(0,0,0,0.3)",
   });
   document.body.appendChild(t);
   setTimeout(() => t.remove(), 2000);
