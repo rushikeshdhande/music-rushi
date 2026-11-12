@@ -10,7 +10,6 @@ import {
 import Navbar from "./components/Navbar";
 import Player from "./components/Player";
 import { PlayerProvider } from "./contexts/PlayerContext";
-import { useSyncStore } from "./lib/syncStore";
 import { clearAlbumTheme } from "./lib/albumTheme";
 
 import Home from "./pages/Home";
@@ -20,12 +19,7 @@ import Albums from "./pages/Albums";
 import AlbumDetails from "./pages/AlbumDetails";
 import Artists from "./pages/Artists";
 import ArtistDetails from "./pages/ArtistDetails";
-import Favourites from "./pages/Favourites";
-// REMOVED: Playlists and PlaylistDetails imports
 import Search from "./pages/Search";
-import Videos from "./pages/Videos";
-import New from "./pages/New";
-import Radio from "./pages/Radio";
 import SharedSong from "./pages/SharedSong";
 import "./index.css";
 
@@ -48,12 +42,6 @@ function ShareAlbumRedirect() {
   return <Navigate to={`/album/${id}`} replace />;
 }
 
-/** /in/song/:slug/:id  →  /song/:id  (renders SharedSong directly via the normal route) */
-function ShareSongRedirect() {
-  const { id } = useParams();
-  return <Navigate to={`/in/song/${id}`} replace />;
-}
-
 function AppShell() {
   return (
     <div className="app">
@@ -71,14 +59,8 @@ function AppShell() {
 
           <Route path="/artists" element={<Artists />} />
           <Route path="/artists/:artistName" element={<ArtistDetails />} />
-          <Route path="/favourites" element={<Favourites />} />
-          
-          {/* REMOVED: Playlists Routes */}
-          
+
           <Route path="/search" element={<Search />} />
-          <Route path="/videos" element={<Videos />} />
-          <Route path="/new" element={<New />} />
-          <Route path="/radio" element={<Radio />} />
 
           {/* Shared song links → SharedSong */}
           <Route path="/in/song/:slug/:id" element={<SharedSong />} />
@@ -97,11 +79,6 @@ function AppShell() {
 }
 
 export default function App() {
-  const hydrate = useSyncStore((s) => s.hydrate);
-  useEffect(() => {
-    hydrate();
-  }, [hydrate]);
-
   return (
     <BrowserRouter>
       <PlayerProvider>
