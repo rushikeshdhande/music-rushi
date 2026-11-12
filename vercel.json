@@ -1,0 +1,9 @@
+{
+  "rewrites": [
+    { "source": "/in/song/:slug/:id", "destination": "/index.html" },
+    { "source": "/in/song/:id", "destination": "/index.html" },
+    { "source": "/in/album/:slug/:id", "destination": "/index.html" },
+    { "source": "/in/album/:id", "destination": "/index.html" },
+    { "source": "/:path*", "destination": "/index.html" }
+  ]
+}

@@ -1,0 +1,19 @@
+﻿.player {
+  position: fixed; bottom: 0; left: 240px; right: 0; height: 80px;
+  background: rgba(255,255,255,0.95); backdrop-filter: blur(20px);
+  border-top: 1px solid #e8e8e8;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px; z-index: 100;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+}
+.player-left { display: flex; align-items: center; gap: 12px; min-width: 220px; }
+.player-art { width: 52px; height: 52px; border-radius: 6px; object-fit: cover; }
+.player-title { font-size: 14px; font-weight: 600; color: #111; }
+.player-artist { font-size: 12px; color: #666; }
+.player-center { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.player-controls { display: flex; align-items: center; gap: 16px; }
+.player-controls button { background: none; border: none; font-size: 20px; cursor: pointer; color: #111; }
+.play-btn { font-size: 28px !important; }
+.player-progress { display: flex; align-items: center; gap: 8px; width: 60%; }
+.player-progress input { flex: 1; }
+.player-progress span { font-size: 11px; color: #888; }

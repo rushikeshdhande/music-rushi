@@ -1,0 +1,1 @@
+gci -r -include *.jsx,*.css | % { "==== $($_.Name) ===="; gc $_ } > ..\AllFiles.txt
