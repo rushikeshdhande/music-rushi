@@ -75,8 +75,11 @@ function AppShell() {
           <Route path="/artists" element={<Artists />} />
           <Route path="/artists/:artistName" element={<ArtistDetails />} />
           <Route path="/favourites" element={<Favourites />} />
+          
+          {/* Playlist Screens */}
           <Route path="/playlists" element={<Playlists />} />
           <Route path="/playlists/:id" element={<PlaylistDetails />} />
+          
           <Route path="/search" element={<Search />} />
           <Route path="/videos" element={<Videos />} />
           <Route path="/new" element={<New />} />

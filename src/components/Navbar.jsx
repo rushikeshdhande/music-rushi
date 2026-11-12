@@ -1,9 +1,8 @@
-﻿import { useEffect } from "react";
+﻿import { useEffect, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useSyncStore } from "../lib/syncStore";
 import "./Navbar.css";
 
-// Minimal SVG Icons to match Apple Music style
 const Icons = {
   Logo: () => (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
@@ -18,14 +17,16 @@ const Icons = {
   Albums: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>,
   Artists: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
   Playlist: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>,
-  User: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+  User: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>,
+  Menu: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>,
+  Close: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
 };
 
 export default function Navbar() {
   const location = useLocation();
-  const playlists = useSyncStore((s) => s.playlists || []);
-  const recent = useSyncStore((s) => s.recent || []);
   const pins = useSyncStore((s) => s.pins || {});
+  
+  const [isOpen, setIsOpen] = useState(false);
 
   const isAlbumDetails =
     location.pathname.startsWith("/album/") ||
@@ -33,86 +34,71 @@ export default function Navbar() {
     location.pathname.startsWith("/in/album/");
 
   useEffect(() => {
+    setIsOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
     document.body.classList.toggle("on-album-details", isAlbumDetails);
     return () => document.body.classList.remove("on-album-details");
   }, [isAlbumDetails]);
 
-  // Get pinned songs (just IDs in this example)
   const pinnedIds = Object.keys(pins).filter(id => pins[id]);
 
   return (
-    <aside className={`navbar ${isAlbumDetails ? "navbar-on-album" : ""}`}>
-      <div className="navbar-logo">
-        <Icons.Logo />
-        <span>music</span>
-      </div>
+    <>
+      <button className="mobile-menu-toggle" onClick={() => setIsOpen(!isOpen)}>
+        {isOpen ? <Icons.Close /> : <Icons.Menu />}
+      </button>
 
-      <div className="navbar-scroll">
-        {/* Main Nav */}
-        <ul className="nav-section">
-          <li><NavLink to="/search" className="nav-item"><Icons.Search /> Search</NavLink></li>
-          <li><NavLink to="/" end className="nav-item"><Icons.Home /> Home</NavLink></li>
-          <li><NavLink to="/videos" className="nav-item"><Icons.New /> New</NavLink></li>
-          <li><NavLink to="/radio" className="nav-item"><Icons.Radio /> Radio</NavLink></li>
-        </ul>
+      <div className={`nav-backdrop ${isOpen ? "show" : ""}`} onClick={() => setIsOpen(false)} />
 
-        {/* Library Section */}
-        <div className="nav-header">Library</div>
-        <ul className="nav-section">
-          <li><NavLink to="/songs" className="nav-item"><Icons.Songs /> Songs</NavLink></li>
-          <li><NavLink to="/albums" className="nav-item"><Icons.Albums /> Albums</NavLink></li>
-          <li><NavLink to="/artists" className="nav-item"><Icons.Artists /> Artists</NavLink></li>
-          <li><NavLink to="/favourites" className="nav-item"><Icons.Playlist /> Favourite Songs</NavLink></li>
-          <li><NavLink to="/library" className="nav-item"><Icons.Albums /> Recently Added</NavLink></li>
-        </ul>
+      <aside className={`navbar ${isAlbumDetails ? "navbar-on-album" : ""} ${isOpen ? "navbar-open" : ""}`}>
+        <div className="navbar-logo">
+          <Icons.Logo />
+          <span>music</span>
+        </div>
 
-        {/* Pins / Pinned Songs Section */}
-        {pinnedIds.length > 0 && (
-          <>
-            <div className="nav-header">Pins</div>
-            <ul className="nav-section">
-              {pinnedIds.slice(0, 3).map(id => (
-                <li key={id}>
-                  <NavLink to={`/song/${id}`} className="nav-item nav-item-small">
-                    <div className="nav-art-placeholder" />
-                    Pinned Track
-                  </NavLink>
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
+        <div className="navbar-scroll">
+          <ul className="nav-section">
+            <li><NavLink to="/search" className="nav-item"><Icons.Search /> Search</NavLink></li>
+            <li><NavLink to="/" end className="nav-item"><Icons.Home /> Home</NavLink></li>
+            <li><NavLink to="/videos" className="nav-item"><Icons.New /> New</NavLink></li>
+            <li><NavLink to="/radio" className="nav-item"><Icons.Radio /> Radio</NavLink></li>
+          </ul>
 
-        {/* Playlists Section */}
-        <div className="nav-header">Playlists</div>
-        <ul className="nav-section">
-          {/* Static default playlists */}
-          <li><NavLink to="/playlists/all" className="nav-item"><Icons.Playlist /> All Playlists</NavLink></li>
-          
-          {/* User Created Playlists */}
-          {playlists.map((pl) => (
-            <li key={pl.id}>
-              <NavLink to={`/playlist/${pl.id}`} className="nav-item nav-item-small">
-                {/* Use a generic icon or the first song's artwork if available */}
-                <div className="nav-art-placeholder small">
-                  {pl.songs && pl.songs.length > 0 && pl.songs[0].artwork ? (
-                     <img src={pl.songs[0].artwork} alt="" />
-                  ) : null}
-                </div>
-                {pl.name || "Untitled Playlist"}
-              </NavLink>
-            </li>
-          ))}
-        </ul>
-      </div>
+          <div className="nav-header">Library</div>
+          <ul className="nav-section">
+            <li><NavLink to="/songs" className="nav-item"><Icons.Songs /> Songs</NavLink></li>
+            <li><NavLink to="/albums" className="nav-item"><Icons.Albums /> Albums</NavLink></li>
+            <li><NavLink to="/artists" className="nav-item"><Icons.Artists /> Artists</NavLink></li>
+            <li><NavLink to="/favourites" className="nav-item"><Icons.Playlist /> Favourite Songs</NavLink></li>
+            <li><NavLink to="/library" className="nav-item"><Icons.Albums /> Recently Added</NavLink></li>
+          </ul>
 
-      {/* Bottom Profile Section (Sticky to bottom left) */}
-      <div className="navbar-bottom">
-        <button className="nav-item user-profile">
-          <Icons.User />
-          <span>Rushikesh</span>
-        </button>
-      </div>
-    </aside>
+          {pinnedIds.length > 0 && (
+            <>
+              <div className="nav-header">Pins</div>
+              <ul className="nav-section">
+                {pinnedIds.slice(0, 3).map(id => (
+                  <li key={id}>
+                    <NavLink to={`/song/${id}`} className="nav-item nav-item-small">
+                      <div className="nav-art-placeholder" />
+                      Pinned Track
+                    </NavLink>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
+
+        <div className="navbar-bottom">
+          <button className="nav-item user-profile">
+            <Icons.User />
+            <span>Rushikesh</span>
+          </button>
+        </div>
+      </aside>
+    </>
   );
 }

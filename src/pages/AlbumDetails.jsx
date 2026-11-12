@@ -5,6 +5,17 @@ import { usePlayer } from "../contexts/PlayerContext";
 import { useSyncStore } from "../lib/syncStore";
 import { shareSong, shareAlbum, songShareUrl } from "../lib/shareUrl";
 
+/* ── Hook for Responsive Design ── */
+function useWindowSize() {
+  const [size, setSize] = useState({ width: window.innerWidth });
+  useEffect(() => {
+    const handleResize = () => setSize({ width: window.innerWidth });
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+  return size;
+}
+
 /* ── Colour Extraction (dominant + vibrant, not a muddy average) ─ */
 function optimizeUrl(url, w) {
   if (!url) return url;
@@ -31,7 +42,6 @@ function extractAlbumColor(imageUrl) {
         ctx.drawImage(img, 0, 0, SIZE, SIZE);
         const { data } = ctx.getImageData(0, 0, SIZE, SIZE);
 
-        // Bucket pixels (4 bits per channel) and score by count × saturation
         const buckets = new Map();
         for (let i = 0; i < data.length; i += 4) {
           if (data[i + 3] < 128) continue;
@@ -39,7 +49,7 @@ function extractAlbumColor(imageUrl) {
           const max = Math.max(R, G, B);
           const min = Math.min(R, G, B);
           const lum = (R * 299 + G * 587 + B * 114) / 1000;
-          if (lum > 238 || lum < 18) continue; // skip near white / black
+          if (lum > 238 || lum < 18) continue;
           const sat = max === 0 ? 0 : (max - min) / max;
           const key = ((R >> 4) << 8) | ((G >> 4) << 4) | (B >> 4);
           const e = buckets.get(key) || { r: 0, g: 0, b: 0, n: 0, sat: 0 };
@@ -70,7 +80,6 @@ function extractAlbumColor(imageUrl) {
 }
 
 function buildColors({ r, g, b }) {
-  // Blend toward a dark base so the page always has good contrast
   const blend = (a) => {
     const R = Math.round(r * a + 14 * (1 - a));
     const G = Math.round(g * a + 14 * (1 - a));
@@ -84,7 +93,6 @@ function buildColors({ r, g, b }) {
     page: bg,
     navbar: bg,
     accent: `rgb(${r},${g},${b})`,
-    // Page bg is always a darkened blend, so text stays light
     text: "#ffffff",
     textMuted: "rgba(255,255,255,0.68)",
     isDark: true,
@@ -113,11 +121,10 @@ function showToast(msg) {
   setTimeout(() => t.remove(), 2000);
 }
 
-// Find the audio link: known field names first, then any string field that looks like audio
 const AUDIO_RE = /\.(mp3|m4a|aac|wav|ogg|opus|flac)(\?|$)|\/video\/upload\/|\/audio\//i;
 const songSrc = (song) => {
   const known =
-    song.audioUrl || song.audio || song.url || song.src || song.preview ||
+    song.uri || song.audioUrl || song.audio || song.url || song.src || song.preview ||
     song.previewUrl || song.file || song.link || song.path || song.mp3 || song.streamUrl;
   if (typeof known === "string" && known) return known;
   for (const v of Object.values(song)) {
@@ -126,7 +133,6 @@ const songSrc = (song) => {
   return null;
 };
 
-// Exactly one row should be "playing": match on audio link, else title (+ id when both have one)
 const isSameSong = (song, cur) => {
   if (!cur) return false;
   const a = songSrc(song);
@@ -139,7 +145,6 @@ const isSameSong = (song, cur) => {
   return song.id != null && song.id === cur.id;
 };
 
-// Read an existing duration in any common shape (seconds, ms, "3:45")
 const readDuration = (song) => {
   const raw =
     song.duration ?? song.length ?? song.time ?? song.durationSec ??
@@ -159,20 +164,42 @@ const readDuration = (song) => {
 const songImage = (song, album) =>
   song.artwork || song.image || song.cover || song.thumbnail || album.artwork;
 
+/* ── Song thumbnail: optimized → original → ♪ placeholder ─────── */
+function SongThumb({ src, alt }) {
+  const [stage, setStage] = useState(0);
+  useEffect(() => setStage(0), [src]);
+
+  const url = stage === 0 ? optimizeUrl(src, 160) : stage === 1 ? src : null;
+  if (!src || !url) return <span style={s.thumbPlaceholder}>♪</span>;
+
+  return (
+    <img
+      src={url}
+      alt={alt}
+      style={s.thumb}
+      onError={() => setStage((n) => n + 1)}
+    />
+  );
+}
+
 /* ── Main Component ───────────────────────────────────────────── */
 const AlbumDetails = () => {
   const { id, albumName } = useParams();
   const { loadAndPlay, current } = usePlayer();
   const { favourites, toggleFavourite } = useSyncStore();
 
+  // Responsive breakpoints
+  const { width } = useWindowSize();
+  const isTablet = width <= 1024;
+  const isMobile = width <= 768;
+  const isSmall = width <= 400;
+
   const album = id ? findAlbumByNumericId(id) : findAlbumByNumericId(albumName);
   const [colors, setColors] = useState(null);
 
-  // Menu is tracked by row INDEX (song ids can be missing/duplicated)
   const [menuOpenId, setMenuOpenId] = useState(null);
   const menuRef = useRef(null);
 
-  // Which ROW is playing (all rows can share the same id/title/audio in the data)
   const [activeIndex, setActiveIndex] = useState(null);
   useEffect(() => {
     if (activeIndex == null || !current || !album?.songs) return;
@@ -181,7 +208,6 @@ const AlbumDetails = () => {
     setActiveIndex(idx >= 0 ? idx : null);
   }, [current]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Real song lengths, read from the audio file metadata
   const [durations, setDurations] = useState({});
   useEffect(() => {
     if (!album?.songs) return;
@@ -214,10 +240,13 @@ const AlbumDetails = () => {
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
   }, []);
 
-  // Extract theme colours from the album art
   useEffect(() => {
     if (!album?.artwork) return;
     let cancelled = false;
@@ -306,7 +335,7 @@ const AlbumDetails = () => {
   return (
     <div style={{ ...s.page, background: pageBg, color: textColor }}>
       {/* ── TOP RIGHT ACTIONS ── */}
-      <div style={s.topActions}>
+      <div style={{ ...s.topActions, ...(isMobile ? s.topActionsMobile : {}) }}>
         <button style={s.iconCircleBtn} onClick={() => shareAlbum(album)} title="Share Album">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
@@ -324,21 +353,28 @@ const AlbumDetails = () => {
       </div>
 
       {/* ── HERO ── */}
-      <div style={s.hero}>
+      <div style={{ ...s.hero, ...(isTablet ? s.heroTablet : {}), ...(isMobile ? s.heroMobile : {}) }}>
         <img
           src={optimizeUrl(album.artwork, 640)}
           alt={album.name}
-          style={s.heroArt}
+          style={{ ...s.heroArt, ...(isTablet ? s.heroArtTablet : {}), ...(isMobile ? s.heroArtMobile : {}) }}
           onError={(e) => { e.currentTarget.style.background = "#1c1c1e"; }}
         />
-        <div style={s.heroInfo}>
-          <h1 style={{ ...s.title, color: textColor }}>{album.name}</h1>
-          <p style={{ ...s.artist, color: textColor }}>{album.artist}</p>
-          <p style={{ ...s.meta, color: textMuted }}>Bollywood • 2023 • {album.songs.length} songs</p>
+        <div style={{ ...s.heroInfo, ...(isMobile ? s.heroInfoMobile : {}) }}>
+          <h1 style={{ ...s.title, ...(isMobile ? s.titleMobile : {}), color: textColor }}>{album.name}</h1>
+          <p style={{ ...s.artist, ...(isMobile ? s.artistMobile : {}), color: textColor }}>{album.artist}</p>
+          <p style={{ ...s.meta, ...(isMobile ? s.metaMobile : {}), color: textMuted }}>
+            Bollywood • 2023 • {album.songs.length} {album.songs.length === 1 ? "song" : "songs"}
+          </p>
 
-          <div style={s.actionsRow}>
+          <div style={{ ...s.actionsRow, ...(isMobile ? s.actionsRowMobile : {}) }}>
             <button
-              style={{ ...s.playBtn, background: "#ffffff", color: "#111111" }}
+              style={{
+                ...s.playBtn,
+                ...(isMobile ? s.playBtnMobile : {}),
+                background: "#ffffff",
+                color: "#111111",
+              }}
               onClick={() => playAt(0)}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style={{ marginRight: 8 }}>
@@ -357,7 +393,7 @@ const AlbumDetails = () => {
       </div>
 
       {/* ── TRACKLIST ── */}
-      <div style={s.tracks}>
+      <div style={{ ...s.tracks, ...(isMobile ? s.tracksMobile : {}) }}>
         {album.songs.map((s2, i) => {
           const isActive = activeIndex === i;
           const isFav = !!favourites[s2.id];
@@ -368,56 +404,71 @@ const AlbumDetails = () => {
               key={`${s2.id ?? "song"}-${i}`}
               style={{
                 ...s.track,
+                ...(isMobile ? s.trackMobile : {}),
+                ...(isSmall ? s.trackSmall : {}),
                 background: isActive || isMenuOpen ? "rgba(255,255,255,0.12)" : "transparent",
                 zIndex: isMenuOpen ? 100 : 1,
               }}
               onMouseEnter={(e) => {
-                if (!isActive && !isMenuOpen) e.currentTarget.style.background = "rgba(255,255,255,0.07)";
+                if (!isActive && !isMenuOpen && !isMobile) e.currentTarget.style.background = "rgba(255,255,255,0.07)";
               }}
               onMouseLeave={(e) => {
-                if (!isActive && !isMenuOpen) e.currentTarget.style.background = "transparent";
+                if (!isActive && !isMenuOpen && !isMobile) e.currentTarget.style.background = "transparent";
               }}
             >
-              <span style={{ ...s.trackNum, color: isActive ? accent : textMuted }}>{i + 1}</span>
-
-              {/* Song image */}
-              <div style={s.thumbWrap} onClick={() => playAt(i)}>
-                <img
-                  src={optimizeUrl(songImage(s2, album), 120)}
-                  alt={s2.title}
-                  loading="lazy"
-                  style={s.thumb}
-                  onError={(e) => { e.currentTarget.style.visibility = "hidden"; }}
-                />
-                {isActive && (
-                  <div style={s.thumbOverlay}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="#fff">
-                      <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                    </svg>
-                  </div>
-                )}
-              </div>
+              {/* Track number: 1, 2, 3 … in order */}
+              <span
+                style={{
+                  ...s.trackNum,
+                  ...(isMobile ? s.trackNumMobile : {}),
+                  color: isActive ? "#ffffff" : "rgba(255,255,255,0.8)",
+                  fontWeight: isActive ? 700 : 500,
+                }}
+              >
+                {i + 1}
+              </span>
 
               <div style={s.trackInfo} onClick={() => playAt(i)}>
-                <div style={{ ...s.trackTitle, color: isActive ? "#ffffff" : textColor, fontWeight: isActive ? 700 : 500 }}>
+                <div
+                  style={{
+                    ...s.trackTitle,
+                    ...(isMobile ? s.trackTitleMobile : {}),
+                    color: isActive ? "#ffffff" : textColor,
+                    fontWeight: isActive ? 700 : 500,
+                  }}
+                >
                   {s2.title}
                 </div>
-                <div style={{ ...s.trackArtist, color: textMuted }}>{s2.artist}</div>
+                <div style={{ ...s.trackArtist, ...(isMobile ? s.trackArtistMobile : {}), color: textMuted }}>
+                  {s2.artist}
+                </div>
               </div>
 
               <button
-                style={{ ...s.iconBtn, color: isFav ? "#f92c47" : textMuted }}
+                style={{
+                  ...s.iconBtn,
+                  ...(isMobile ? s.iconBtnMobile : {}),
+                  color: isFav ? "#f92c47" : textMuted,
+                }}
                 onClick={() => toggleFavourite(s2.id)}
                 title={isFav ? "Unfavourite" : "Favourite"}
               >
                 {isFav ? "★" : "☆"}
               </button>
 
-              <span style={{ ...s.trackDuration, color: textMuted }}>{formatDuration(readDuration(s2) || durations[i])}</span>
+              <span
+                style={{
+                  ...s.trackDuration,
+                  ...(isMobile ? s.trackDurationMobile : {}),
+                  color: textMuted,
+                }}
+              >
+                {formatDuration(readDuration(s2) || durations[i])}
+              </span>
 
-              <div style={{ position: "relative" }} ref={isMenuOpen ? menuRef : null}>
+              <div style={{ position: "relative", flexShrink: 0 }} ref={isMenuOpen ? menuRef : null}>
                 <button
-                  style={{ ...s.iconBtn, color: isMenuOpen ? textColor : textMuted }}
+                  style={{ ...s.iconBtn, ...(isMobile ? s.iconBtnMobile : {}), color: isMenuOpen ? textColor : textMuted }}
                   onClick={(e) => {
                     e.stopPropagation();
                     setMenuOpenId(isMenuOpen ? null : i);
@@ -428,7 +479,7 @@ const AlbumDetails = () => {
                 </button>
 
                 {isMenuOpen && (
-                  <div style={s.popupMenu}>
+                  <div style={{ ...s.popupMenu, ...(isMobile ? s.popupMenuMobile : {}) }}>
                     <div style={s.menuItem} onClick={() => setMenuOpenId(null)}>
                       <span>View Credits</span>
                       <span style={s.menuIcon}>ⓘ</span>
@@ -462,6 +513,7 @@ const AlbumDetails = () => {
 /* ── STYLES ───────────────────────────────────────────────────── */
 const s = {
   page: {
+    width: "100%",
     maxWidth: "100%",
     margin: 0,
     minHeight: "100vh",
@@ -469,6 +521,7 @@ const s = {
     transition: "background 0.5s ease, color 0.3s ease",
     position: "relative",
     boxSizing: "border-box",
+    overflowX: "hidden",
   },
   topActions: {
     position: "absolute",
@@ -489,6 +542,7 @@ const s = {
     alignItems: "center",
     justifyContent: "center",
     cursor: "pointer",
+    backdropFilter: "blur(10px)",
   },
   hero: {
     display: "flex",
@@ -541,6 +595,7 @@ const s = {
     cursor: "pointer",
     display: "flex",
     alignItems: "center",
+    justifyContent: "center",
   },
   shareCircleBtn: {
     width: 44,
@@ -552,6 +607,7 @@ const s = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+    flexShrink: 0,
   },
 
   tracks: {
@@ -559,7 +615,7 @@ const s = {
     flexDirection: "column",
     gap: 4,
     borderTop: "1px solid rgba(255,255,255,0.12)",
-    padding: "16px 12px 120px",
+    padding: "16px 12px 120px", // bottom space for the player bar
     maxWidth: 1000,
     margin: "0 auto",
     boxSizing: "border-box",
@@ -597,6 +653,15 @@ const s = {
     objectFit: "cover",
     display: "block",
   },
+  thumbPlaceholder: {
+    position: "absolute",
+    inset: 0,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: 20,
+    color: "rgba(255,255,255,0.5)",
+  },
   thumbOverlay: {
     position: "absolute",
     inset: 0,
@@ -632,6 +697,7 @@ const s = {
     fontVariantNumeric: "tabular-nums",
     minWidth: 40,
     textAlign: "right",
+    flexShrink: 0,
   },
   iconBtn: {
     width: 32,
@@ -647,8 +713,6 @@ const s = {
     borderRadius: "50%",
     flexShrink: 0,
   },
-
-  /* ── POPUP MENU ── */
   popupMenu: {
     position: "absolute",
     top: "100%",
@@ -673,6 +737,105 @@ const s = {
   },
   menuIcon: { opacity: 0.6, fontSize: 14 },
   menuDivider: { height: 1, background: "rgba(255,255,255,0.08)", margin: "2px 0" },
+
+  /* ── TABLET (≤1024) ── */
+  heroTablet: {
+    padding: "64px 24px 28px",
+    gap: 24,
+  },
+  heroArtTablet: {
+    width: 240,
+  },
+
+  /* ── MOBILE (≤768) ── */
+  topActionsMobile: {
+    top: 12,
+    right: 12,
+  },
+  heroMobile: {
+    flexDirection: "column",
+    alignItems: "center",
+    textAlign: "center",
+    padding: "64px 16px 20px",
+    gap: 18,
+  },
+  heroArtMobile: {
+    width: "min(62vw, 240px)",
+    borderRadius: 8,
+  },
+  heroInfoMobile: {
+    flex: "0 0 auto",
+    width: "100%",
+    minWidth: 0,
+    alignItems: "center",
+    paddingBottom: 0,
+    gap: 4,
+  },
+  titleMobile: {
+    fontSize: "clamp(20px, 6vw, 26px)",
+    textAlign: "center",
+  },
+  artistMobile: {
+    fontSize: 16,
+    textAlign: "center",
+  },
+  metaMobile: {
+    fontSize: 13,
+    margin: "0 0 14px",
+    textAlign: "center",
+  },
+  actionsRowMobile: {
+    justifyContent: "center",
+    flexWrap: "nowrap",
+    width: "100%",
+    gap: 12,
+  },
+  playBtnMobile: {
+    flex: "1 1 auto",
+    maxWidth: 220,
+    padding: "12px 20px",
+  },
+  tracksMobile: {
+    padding: "8px 6px 120px",
+  },
+  trackMobile: {
+    gap: 10,
+    padding: "8px 6px",
+  },
+  trackSmall: {
+    gap: 8,
+    padding: "6px 4px",
+  },
+  trackNumMobile: {
+    width: 16,
+    fontSize: 13,
+  },
+  thumbWrapMobile: {
+    width: 44,
+    height: 44,
+  },
+  thumbWrapSmall: {
+    width: 40,
+    height: 40,
+  },
+  trackTitleMobile: {
+    fontSize: 14,
+  },
+  trackArtistMobile: {
+    fontSize: 12,
+  },
+  trackDurationMobile: {
+    fontSize: 12,
+    minWidth: 32,
+  },
+  iconBtnMobile: {
+    width: 28,
+    height: 28,
+    fontSize: 16,
+  },
+  popupMenuMobile: {
+    width: 190,
+  },
 };
 
 export default AlbumDetails;
