@@ -21,15 +21,12 @@ import AlbumDetails from "./pages/AlbumDetails";
 import Artists from "./pages/Artists";
 import ArtistDetails from "./pages/ArtistDetails";
 import Favourites from "./pages/Favourites";
-import Playlists from "./pages/Playlists";
-import PlaylistDetails from "./pages/PlaylistDetails";
+// REMOVED: Playlists and PlaylistDetails imports
 import Search from "./pages/Search";
 import Videos from "./pages/Videos";
 import New from "./pages/New";
 import Radio from "./pages/Radio";
 import SharedSong from "./pages/SharedSong";
-// NOTE: SharedAlbum is intentionally NOT imported.
-// All album screens render AlbumDetails only.
 import "./index.css";
 
 /** Clears album theme on any route that isn't an album page */
@@ -76,9 +73,7 @@ function AppShell() {
           <Route path="/artists/:artistName" element={<ArtistDetails />} />
           <Route path="/favourites" element={<Favourites />} />
           
-          {/* Playlist Screens */}
-          <Route path="/playlists" element={<Playlists />} />
-          <Route path="/playlists/:id" element={<PlaylistDetails />} />
+          {/* REMOVED: Playlists Routes */}
           
           <Route path="/search" element={<Search />} />
           <Route path="/videos" element={<Videos />} />
