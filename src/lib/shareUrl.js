@@ -10,21 +10,18 @@ export function slugify(s) {
     .slice(0, 60);
 }
 
-/** Song URL: /in/song/{slug}/{numericId} */
 export function songShareUrl(song) {
   const slug = slugify(song.title) || "song";
   const id = song.numericId || song.id;
   return `${SHARE_BASE}/in/song/${slug}/${id}`;
 }
 
-/** Album URL: /in/album/{slug}/{numericId} */
 export function albumShareUrl(album) {
   const slug = slugify(album.name) || "album";
   const id = album.numericId || album.id;
   return `${SHARE_BASE}/in/album/${slug}/${id}`;
 }
 
-/** OS share sheet for a song (with clipboard fallback). */
 export async function shareSong(song) {
   if (!song) return;
   const url = songShareUrl(song);
@@ -33,7 +30,6 @@ export async function shareSong(song) {
   return _share(title, text, url);
 }
 
-/** OS share sheet for an album. */
 export async function shareAlbum(album) {
   if (!album) return;
   const url = albumShareUrl(album);
@@ -74,18 +70,10 @@ function _toast(msg) {
   const t = document.createElement("div");
   t.textContent = msg;
   Object.assign(t.style, {
-    position: "fixed",
-    bottom: "100px",
-    left: "50%",
-    transform: "translateX(-50%)",
-    background: "#1c1c1e",
-    color: "#fff",
-    padding: "10px 18px",
-    borderRadius: "999px",
-    fontSize: "14px",
-    fontWeight: "600",
-    zIndex: 9999,
-    boxShadow: "0 6px 24px rgba(0,0,0,0.3)",
+    position: "fixed", bottom: "100px", left: "50%",
+    transform: "translateX(-50%)", background: "#1c1c1e", color: "#fff",
+    padding: "10px 18px", borderRadius: "999px", fontSize: "14px",
+    fontWeight: "600", zIndex: 9999, boxShadow: "0 6px 24px rgba(0,0,0,0.3)",
   });
   document.body.appendChild(t);
   setTimeout(() => t.remove(), 2000);

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ALL_SONGS, findSongByNumericId } from "../data/remoteAlbums";
+import { findSongByNumericId, ALL_SONGS } from "../data/remoteAlbums";
 import { usePlayer } from "../contexts/PlayerContext";
 
 const APP_PACKAGE = "com.netease.cloudmusic";
@@ -17,20 +17,18 @@ export default function SharedSong() {
     else setNotFound(true);
   }, [id]);
 
-  // Try to hand off to the native app
+  // Auto-open app on mobile
   useEffect(() => {
     if (!song) return;
     const isMobile = /android|iphone|ipad/i.test(navigator.userAgent);
     if (!isMobile) return;
-
-    const androidIntent =
+    const intent =
       `intent://music-rushi.vercel.app/in/song/${slug}/${id}` +
       `#Intent;scheme=https;package=${APP_PACKAGE};` +
       `S.browser_fallback_url=${encodeURIComponent(window.location.href)};end`;
-
     const t = setTimeout(() => {
-      try { window.location.href = androidIntent; } catch {}
-    }, 400);
+      try { window.location.href = intent; } catch {}
+    }, 600);
     return () => clearTimeout(t);
   }, [song, id, slug]);
 
@@ -44,7 +42,7 @@ export default function SharedSong() {
   }
   if (!song) return <div className="page">Loading…</div>;
 
-  const androidIntent =
+  const intent =
     `intent://music-rushi.vercel.app/in/song/${slug}/${id}` +
     `#Intent;scheme=https;package=${APP_PACKAGE};` +
     `S.browser_fallback_url=${encodeURIComponent(window.location.href)};end`;
@@ -65,7 +63,7 @@ export default function SharedSong() {
       </button>
 
       <a
-        href={androidIntent}
+        href={intent}
         className="btn"
         style={{
           marginTop: 12,

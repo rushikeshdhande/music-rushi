@@ -46,3 +46,54 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sa
 .create-bar input { flex: 1; padding: 10px 14px; border: 1px solid #e8e8e8; border-radius: 8px; font-size: 14px; }
 .album-hero { display: flex; gap: 24px; align-items: center; margin-bottom: 24px; }
 .album-hero img { width: 180px; height: 180px; border-radius: 10px; object-fit: cover; }
+/* ── Navbar — SAME colour as body, no split ──────────────────── */
+.navbar {
+  width: 240px;
+  background: var(--album-bg);          /* 🔑 same variable as body */
+  border-right: 1px solid rgba(0,0,0,0.06);
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 12px;
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  transition: background 0.5s ease, color 0.3s ease;
+  color: var(--album-text);
+}
+
+html.album-theme-active .navbar {
+  border-right-color: rgba(255, 255, 255, 0.06);  /* subtle, not split */
+}
+
+/* Everything else stays the same... */
+
+:root {
+  --album-bg: #121212; /* Dark background like screenshot */
+  --album-text: #ffffff;
+  --album-text-muted: #a1a1aa;
+}
+
+body {
+  margin: 0;
+  background-color: var(--album-bg);
+  color: var(--album-text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom Scrollbar for Web (hidden like Apple Music) */
+::-webkit-scrollbar { display: none; }
+
+.app {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.main {
+  flex: 1;
+  overflow-y: auto;
+  background-color: var(--album-bg);
+}

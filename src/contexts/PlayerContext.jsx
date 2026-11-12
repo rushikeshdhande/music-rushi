@@ -30,8 +30,7 @@ export function PlayerProvider({ children }) {
     if (!current) return;
     audioRef.current.src = current.uri;
     if (playing) audioRef.current.play().catch(() => {});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [index]);
+  }, [index]); // eslint-disable-line
 
   useEffect(() => {
     const a = audioRef.current;
@@ -40,11 +39,13 @@ export function PlayerProvider({ children }) {
     const onEnd = () => { if (index < queue.length - 1) setIndex((i) => i + 1); };
     const onPlay = () => setPlaying(true);
     const onPause = () => setPlaying(false);
+    
     a.addEventListener("timeupdate", onTime);
     a.addEventListener("loadedmetadata", onDur);
     a.addEventListener("ended", onEnd);
     a.addEventListener("play", onPlay);
     a.addEventListener("pause", onPause);
+    
     return () => {
       a.removeEventListener("timeupdate", onTime);
       a.removeEventListener("loadedmetadata", onDur);
@@ -52,7 +53,6 @@ export function PlayerProvider({ children }) {
       a.removeEventListener("play", onPlay);
       a.removeEventListener("pause", onPause);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index, queue.length]);
 
   const playPause = () => {

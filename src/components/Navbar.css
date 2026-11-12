@@ -1,17 +1,181 @@
-﻿.navbar {
-  width: 240px; background: #fafafa; border-right: 1px solid #e8e8e8;
-  height: 100vh; position: sticky; top: 0;
-  display: flex; flex-direction: column;
-  padding: 24px 12px; box-sizing: border-box;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+﻿/* Navbar.css */
+
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 260px;
+  background: #1c1512; /* Deep dark brown/black background from image */
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  z-index: 1000;
+  transition: all 0.3s ease;
+  color: #fff;
 }
-.navbar-logo { font-size: 20px; font-weight: 700; padding: 8px 12px 24px; color: #f92c47; }
-.navbar-scroll { flex: 1; overflow-y: auto; }
-.nav-list { list-style: none; padding: 0; margin: 0; }
+
+.navbar-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 20px 16px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.5px;
+}
+
+.navbar-logo svg {
+  color: #fa2d48; /* Apple Music Red tint */
+}
+
+/* Scrollable Area */
+.navbar-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0 12px;
+}
+
+/* Custom Scrollbar */
+.navbar-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.navbar-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+.navbar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Sections */
+.nav-header {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+  padding: 16px 12px 8px;
+  letter-spacing: 0.5px;
+}
+
+.nav-section {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Navigation Items */
 .nav-item {
-  display: block; padding: 8px 12px; border-radius: 6px;
-  color: #333; text-decoration: none; font-size: 14px; margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: none;
+  border: none;
+  width: 100%;
+  cursor: pointer;
+  text-align: left;
 }
-.nav-item:hover { background: #f0f0f0; }
-.nav-item.active { background: #f92c47; color: #fff; }
-.navbar-footer { padding: 12px; font-size: 13px; color: #888; border-top: 1px solid #e8e8e8; }
+
+.nav-item svg {
+  color: rgba(255, 255, 255, 0.6);
+  flex-shrink: 0;
+  transition: color 0.15s ease;
+}
+
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.nav-item:hover svg {
+  color: #fff;
+}
+
+.nav-item.active {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-weight: 600;
+}
+
+.nav-item.active svg {
+  color: #fa2d48; /* Highlight color for active icon */
+}
+
+/* Small items (for playlists/pins) */
+.nav-item-small {
+  font-size: 13px;
+  padding: 6px 12px;
+}
+
+/* Artwork placeholders for playlists/pins */
+.nav-art-placeholder {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.nav-art-placeholder.small {
+  width: 24px;
+  height: 24px;
+}
+
+.nav-art-placeholder img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Bottom Profile Section */
+.navbar-bottom {
+  padding: 16px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: #1c1512;
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.user-profile svg {
+  color: #00b0ff; /* Blue user icon from image */
+}
+
+/* Album Theme Overrides */
+body.on-album-details .navbar {
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(20px);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .navbar {
+    display: none; /* Hide sidebar on mobile, use bottom nav instead */
+  }
+}
