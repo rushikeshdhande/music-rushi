@@ -17,8 +17,6 @@ import Library from "./pages/Library";
 import Songs from "./pages/Songs";
 import Albums from "./pages/Albums";
 import AlbumDetails from "./pages/AlbumDetails";
-import Artists from "./pages/Artists";
-import ArtistDetails from "./pages/ArtistDetails";
 import Search from "./pages/Search";
 import SharedSong from "./pages/SharedSong";
 import "./index.css";
@@ -56,9 +54,6 @@ function AppShell() {
           {/* Album screens — ALWAYS AlbumDetails, never SharedAlbum */}
           <Route path="/album/:id" element={<AlbumDetails />} />
           <Route path="/albums/:albumName" element={<AlbumDetails />} />
-
-          <Route path="/artists" element={<Artists />} />
-          <Route path="/artists/:artistName" element={<ArtistDetails />} />
 
           <Route path="/search" element={<Search />} />
 

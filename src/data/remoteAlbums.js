@@ -32,8 +32,8 @@ export const REMOTE_ALBUMS = [
   {
     id: "album_vedaa",
     numericId: "1762679285",
-    name: "Zaroorat Se Zyada",
-    artist: "Arijit Singh, Amaal Mallik",
+    name: "Vedaa (Original Motion Picture Soundtrack) - EP",
+    artist: "Amaal Mallik, Yuva, Manan Bhardwaj",
     artwork:
       "https://res.cloudinary.com/gwjb2ayo/image/upload/v1794416537/Screenshot_2026-11-11_223132.png",
     songs: [
@@ -42,7 +42,7 @@ export const REMOTE_ALBUMS = [
         numericId: "1762679286",
         title: "Zaroorat Se Zyada",
         artist: "Arijit Singh, Amaal Mallik",
-        album: "Zaroorat Se Zyada",
+        album: "Vedaa (Original Motion Picture Soundtrack) - EP",
         uri: "https://res.cloudinary.com/gwjb2ayo/video/upload/v1794416729/Zaroorat_Se_Zyada_LYRICS_-_Arijit_Singh_Amaal_Malik_Vedaa_John_Abraham_Tamannaah_B_Kunaal.mp3",
         duration: 0,
         artwork:
@@ -58,7 +58,7 @@ export const REMOTE_ALBUMS = [
         numericId: "1762679287",
         title: "Zaroorat Se Zyada (Duet)",
         artist: "Arijit Singh, Amaal Mallik",
-        album: "Zaroorat Se Zyada",
+        album: "Vedaa (Original Motion Picture Soundtrack) - EP",
         uri: "https://res.cloudinary.com/gwjb2ayo/video/upload/v1794468980/Vedaa_2024_-_Zaroorat_Se_Zyada_-_Duet__mp3.pm.mp3",
         duration: 0,
         artwork:
