@@ -32,3 +32,5 @@ Thumbs.db
 AllFiles.txt
 ALL-CODE.txt
 "@ | Out-File ".gitignore" -Encoding utf8
+.vercel
+.env*
