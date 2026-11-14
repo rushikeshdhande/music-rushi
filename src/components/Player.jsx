@@ -94,7 +94,7 @@ export default function Player() {
         .mini-title { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .mini-artist { font-size: 13px; color: var(--text-muted, #a1a1aa); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        /* Progress */
+        /* Progress (Mini) */
         .progress-row { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
         .progress-time { font-size: 11px; color: var(--text-muted, #a1a1aa); min-width: 32px; }
         .progress-time.right { text-align: right; }
@@ -102,22 +102,32 @@ export default function Player() {
         .progress-fill { position: absolute; top: 0; left: 0; height: 100%; background: #fff; border-radius: 999px; pointer-events: none; }
         .progress-container input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 
-        /* ================= FULL-SCREEN PLAYER (UNCHANGED) ================= */
+        /* ================= FULL-SCREEN PLAYER (FIXED UI) ================= */
         .player-full { position: fixed; inset: 0; z-index: 2000; display: flex; flex-direction: column; overflow: hidden; color: #fff; opacity: 0; visibility: hidden; transform: translateY(40px); transition: all 0.32s ease; }
         .player-full.open { opacity: 1; visibility: visible; transform: translateY(0); }
         .player-full-bg { position: absolute; inset: -40px; background-size: cover; background-position: center; filter: blur(60px) brightness(0.55); transform: scale(1.2); z-index: -2; }
         .player-full-overlay { position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(0,0,0,0.25), rgba(0,0,0,0.85)); }
 
-        .full-header { display: flex; justify-content: space-between; padding: 20px 24px; }
-        .full-close { background: rgba(255,255,255,0.1); border: none; color: #fff; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        .full-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 24px; }
+        .full-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; font-size: 15px; font-weight: 500; }
+        .full-close { background: rgba(255,255,255,0.1); border: none; color: #fff; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
+        .full-close:hover { background: rgba(255,255,255,0.2); }
+        
+        .full-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 24px; width: 100%; max-width: 500px; margin: 0 auto; }
         .full-art-wrapper { width: min(78vw, 78vh, 420px); aspect-ratio: 1; border-radius: 16px; overflow: hidden; margin-bottom: 32px; box-shadow: 0 24px 60px rgba(0,0,0,0.6); }
         .full-art { width: 100%; height: 100%; object-fit: cover; }
-        .full-info { width: 100%; max-width: 480px; text-align: left; margin-bottom: 20px; }
-        .full-title { font-size: 26px; font-weight: 700; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .full-artist { font-size: 15px; color: rgba(255,255,255,0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .full-info { width: 100%; text-align: left; margin-bottom: 24px; }
+        .full-title { font-size: 26px; font-weight: 700; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .full-artist { font-size: 16px; color: rgba(255,255,255,0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        .full-controls { display: flex; align-items: center; justify-content: center; gap: 24px; margin-top: 24px; }
+        /* Force explicit height on full-screen progress bar to fix giant box bug */
+        .full-progress { position: relative; width: 100%; height: 6px; background: rgba(255,255,255,0.2); border-radius: 999px; cursor: pointer; margin-bottom: 32px; }
+        .full-progress-fill { position: absolute; top: 0; left: 0; height: 100%; background: #fff; border-radius: 999px; pointer-events: none; }
+        .full-progress input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+
+        .full-controls { display: flex; align-items: center; justify-content: center; gap: 36px; }
+        .full-controls .icon-btn img { width: 44px; height: 44px; filter: brightness(0) invert(1); opacity: 0.9; }
+        .full-controls .play-btn img { width: 72px; height: 72px; }
 
         /* ================= MOBILE (MINI PLAYER ONLY) ================= */
         @media (max-width: 640px) {
@@ -168,6 +178,10 @@ export default function Player() {
           }
           .mobile-controls .play-btn img { width: 32px; height: 32px; }
           .mobile-controls .icon-btn img { width: 22px; height: 22px; }
+          
+          /* Small mobile tweaks for full screen */
+          .full-title { font-size: 22px; }
+          .full-controls { gap: 24px; }
         }
 
         /* Hide mobile-only controls on desktop */
@@ -180,7 +194,6 @@ export default function Player() {
       {/* ============ MINI PLAYER ============ */}
       <div className={`player-mini ${expanded ? "hidden" : ""} ${hasTrack ? "active" : "idle"}`}>
         
-        {/* Desktop controls (hidden on mobile) */}
         <div className="mini-controls">
           <button className="icon-btn idle-extras">
             <svg className="idle-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
@@ -217,7 +230,6 @@ export default function Player() {
           </div>
         ) : (
           <>
-            {/* Desktop idle center logo */}
             <div className="idle-logo">
               <svg viewBox="0 0 24 24"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
             </div>
@@ -225,14 +237,12 @@ export default function Player() {
               <svg className="idle-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 5L6 9H2v6h4l5 4V5zM15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14"/></svg>
             </div>
 
-            {/* Mobile-only idle artwork (default look) */}
             <div className="idle-art-mobile">
               <svg viewBox="0 0 24 24"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
             </div>
           </>
         )}
 
-        {/* Mobile right-side controls: play/pause + forward (full-size icons) */}
         <div className="mobile-controls">
           <button className="play-btn" onClick={playPause} disabled={!hasTrack}>
             <img src={playing ? "/pause_icon_transparent.png" : "/playicon.png"} alt="Play" />
@@ -243,7 +253,7 @@ export default function Player() {
         </div>
       </div>
 
-      {/* ============ FULL-SCREEN PLAYER (UNCHANGED) ============ */}
+      {/* ============ FULL-SCREEN PLAYER (FIXED) ============ */}
       {hasTrack && (
         <div className={`player-full ${expanded ? "open" : ""}`}>
           <div className="player-full-bg" style={{ backgroundImage: `url(${current.artwork})` }} />
@@ -257,21 +267,38 @@ export default function Player() {
           </div>
 
           <div className="full-body">
-            <div className="full-art-wrapper"><img src={current.artwork} alt="Art" className="full-art" /></div>
+            <div className="full-art-wrapper">
+              <img src={current.artwork} alt="Art" className="full-art" />
+            </div>
+            
             <div className="full-info">
               <div className="full-title">{current.title}</div>
               <div className="full-artist">{current.artist}</div>
             </div>
             
-            <div className="progress-container" style={{ width: "100%", maxWidth: "480px", height: "6px" }}>
-              <div className="progress-fill" style={{ width: `${progress}%` }} />
-              <input type="range" min="0" max={duration || 0} step="0.1" value={currentTime || 0} onChange={(e) => seek(Number(e.target.value))} />
+            {/* FIXED: Replaced broken progress-container with dedicated full-progress bar */}
+            <div className="full-progress">
+              <div className="full-progress-fill" style={{ width: `${progress}%` }} />
+              <input 
+                type="range" 
+                min="0" 
+                max={duration || 0} 
+                step="0.1" 
+                value={currentTime || 0} 
+                onChange={(e) => seek(Number(e.target.value))} 
+              />
             </div>
 
             <div className="full-controls">
-              <button className="icon-btn" onClick={prev}><img src="/fastbackwardicon.png" alt="Prev" style={{ width: 44, height: 44 }} /></button>
-              <button className="play-btn" onClick={playPause}><img src={playing ? "/pause_icon_transparent.png" : "/playicon.png"} alt="Play" style={{ width: 72, height: 72 }} /></button>
-              <button className="icon-btn" onClick={next}><img src="/fastforwardicon.png" alt="Next" style={{ width: 44, height: 44 }} /></button>
+              <button className="icon-btn" onClick={prev}>
+                <img src="/fastbackwardicon.png" alt="Prev" />
+              </button>
+              <button className="play-btn" onClick={playPause}>
+                <img src={playing ? "/pause_icon_transparent.png" : "/playicon.png"} alt="Play" />
+              </button>
+              <button className="icon-btn" onClick={next}>
+                <img src="/fastforwardicon.png" alt="Next" />
+              </button>
             </div>
           </div>
         </div>
