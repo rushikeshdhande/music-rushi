@@ -1,4 +1,4 @@
-﻿import React, { useEffect } from "react";
+import React, { useEffect } from "react";
 import {
   BrowserRouter,
   Routes,
@@ -59,7 +59,7 @@ function AppShell() {
 
           {/* ✅ NEW: Shared Music Video Route */}
           <Route path="/in/music-video/:slug/:id" element={<SharedMusicVideo />} />
-          
+
           {/* Album screens */}
           <Route path="/album/:id" element={<AlbumDetails />} />
           <Route path="/albums/:albumName" element={<AlbumDetails />} />
