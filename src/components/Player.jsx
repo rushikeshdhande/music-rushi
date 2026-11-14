@@ -51,13 +51,14 @@ export default function Player() {
           border-radius: 0px;
           border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
           box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-          z-index: 3000; /* ABOVE .player-full (2000) — always visible */
+          z-index: 1000;
           color: var(--text-main, #f5f5f7);
           font-family: 'Inter', system-ui, -apple-system, sans-serif;
-          transition: background 0.3s ease, border-color 0.3s ease;
+          transition: background 0.3s ease, border-color 0.3s ease, opacity 0.2s, transform 0.2s;
         }
+        .player-mini.hidden { opacity: 0; pointer-events: none; transform: translateX(-50%) translateY(20px); }
 
-        /* ===== Control cluster: prev | play | next ===== */
+        /* ===== Control cluster: prev | play | next (all same visual weight) ===== */
         .mini-controls {
           display: flex;
           align-items: center;
@@ -307,6 +308,7 @@ export default function Player() {
             grid-template-columns: 1fr auto; gap: 8px;
             overflow: hidden;
           }
+          .player-mini.hidden { transform: translateY(20px); }
           .mini-center { gap: 10px; }
           .mini-art { width: 42px; height: 42px; border-radius: 6px; }
           .mini-info { gap: 2px; }
@@ -328,9 +330,6 @@ export default function Player() {
           .full-play-btn img { width: 52px; height: 52px; }
           .full-ctrl { width: 54px; height: 54px; }
           .full-ctrl img { width: 34px; height: 34px; }
-
-          /* Leave room for the mini player at the bottom so full-screen controls aren't covered */
-          .full-body { padding-bottom: 80px; }
         }
 
         @media (max-width: 380px) {
@@ -344,8 +343,8 @@ export default function Player() {
         }
       `}</style>
 
-      {/* ============ MINI PLAYER — always visible, on top of full player ============ */}
-      <div className="player-mini">
+      {/* ============ MINI PLAYER ============ */}
+      <div className={`player-mini ${expanded ? "hidden" : ""}`}>
         <div className="mini-controls">
           <button className="icon-btn" onClick={prev} aria-label="Previous">
             <img src="/fastbackwardicon.png" alt="" />
