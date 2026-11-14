@@ -84,7 +84,7 @@ export default function Player() {
         /* Mobile-only idle artwork (hidden on desktop) */
         .idle-art-mobile { display: none; }
 
-        /* Hide desktop-only idle speaker icon on mobile */
+        /* Idle speaker icon */
         .idle-speaker { display: flex; justify-content: flex-end; }
 
         /* Active Info */
@@ -102,7 +102,7 @@ export default function Player() {
         .progress-fill { position: absolute; top: 0; left: 0; height: 100%; background: #fff; border-radius: 999px; pointer-events: none; }
         .progress-container input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 
-        /* ================= FULL-SCREEN PLAYER ================= */
+        /* ================= FULL-SCREEN PLAYER (UNCHANGED) ================= */
         .player-full { position: fixed; inset: 0; z-index: 2000; display: flex; flex-direction: column; overflow: hidden; color: #fff; opacity: 0; visibility: hidden; transform: translateY(40px); transition: all 0.32s ease; }
         .player-full.open { opacity: 1; visibility: visible; transform: translateY(0); }
         .player-full-bg { position: absolute; inset: -40px; background-size: cover; background-position: center; filter: blur(60px) brightness(0.55); transform: scale(1.2); z-index: -2; }
@@ -119,7 +119,7 @@ export default function Player() {
 
         .full-controls { display: flex; align-items: center; justify-content: center; gap: 24px; margin-top: 24px; }
 
-        /* ================= MOBILE ================= */
+        /* ================= MOBILE (MINI PLAYER ONLY) ================= */
         @media (max-width: 640px) {
           .player-mini {
             left: 8px; right: 8px; bottom: 8px;
@@ -131,13 +131,9 @@ export default function Player() {
           .player-mini.hidden { transform: translateY(20px); }
 
           /* Active: [art] [title/artist] [play][next] */
-          .player-mini.active {
-            grid-template-columns: auto 1fr auto;
-          }
+          .player-mini.active { grid-template-columns: auto 1fr auto; }
           /* Idle: [logo art] [spacer] [play][next] */
-          .player-mini.idle {
-            grid-template-columns: auto 1fr auto;
-          }
+          .player-mini.idle { grid-template-columns: auto 1fr auto; }
 
           /* Hide desktop-only idle pieces on mobile */
           .idle-logo { display: none; }
@@ -155,7 +151,7 @@ export default function Player() {
           /* Hide the desktop mini-controls container on mobile so we control order */
           .mini-controls { display: none; }
 
-          /* Compact active artwork */
+          /* Compact active artwork + text */
           .mini-art { width: 44px; height: 44px; border-radius: 8px; }
           .mini-center { gap: 10px; }
           .mini-title { font-size: 14px; }
@@ -247,7 +243,7 @@ export default function Player() {
         </div>
       </div>
 
-      {/* ============ FULL-SCREEN PLAYER ============ */}
+      {/* ============ FULL-SCREEN PLAYER (UNCHANGED) ============ */}
       {hasTrack && (
         <div className={`player-full ${expanded ? "open" : ""}`}>
           <div className="player-full-bg" style={{ backgroundImage: `url(${current.artwork})` }} />
