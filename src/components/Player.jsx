@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { usePlayer } from "../contexts/PlayerContext";
 
 const fmt = (s) => {
@@ -51,14 +51,13 @@ export default function Player() {
           border-radius: 0px;
           border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
           box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-          z-index: 1000;
+          z-index: 3000; /* ABOVE the full-screen player (2000) */
           color: var(--text-main, #f5f5f7);
           font-family: 'Inter', system-ui, -apple-system, sans-serif;
-          transition: background 0.3s ease, border-color 0.3s ease, opacity 0.2s, transform 0.2s;
+          transition: background 0.3s ease, border-color 0.3s ease;
         }
-        .player-mini.hidden { opacity: 0; pointer-events: none; transform: translateX(-50%) translateY(20px); }
 
-        /* ===== Control cluster: prev | play | next (all same visual weight) ===== */
+        /* ===== Control cluster: prev | play | next ===== */
         .mini-controls {
           display: flex;
           align-items: center;
@@ -308,7 +307,6 @@ export default function Player() {
             grid-template-columns: 1fr auto; gap: 8px;
             overflow: hidden;
           }
-          .player-mini.hidden { transform: translateY(20px); }
           .mini-center { gap: 10px; }
           .mini-art { width: 42px; height: 42px; border-radius: 6px; }
           .mini-info { gap: 2px; }
@@ -343,8 +341,8 @@ export default function Player() {
         }
       `}</style>
 
-      {/* ============ MINI PLAYER ============ */}
-      <div className={`player-mini ${expanded ? "hidden" : ""}`}>
+      {/* ============ MINI PLAYER (always visible, sits above the full player) ============ */}
+      <div className="player-mini">
         <div className="mini-controls">
           <button className="icon-btn" onClick={prev} aria-label="Previous">
             <img src="/fastbackwardicon.png" alt="" />
