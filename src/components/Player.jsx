@@ -64,27 +64,30 @@ export default function Player() {
           display: inline-flex; align-items: center; justify-content: center;
           transition: opacity 0.15s, transform 0.15s;
         }
-        .icon-btn img, .idle-svg { width: 24px; height: 24px; filter: brightness(0) invert(1); opacity: 0.6; }
         .icon-btn:hover, .icon-btn:hover .idle-svg { opacity: 1; transform: scale(1.08); }
-        .play-btn img { width: 38px; height: 38px; }
         .play-btn:hover { transform: scale(1.08); }
+        
+        /* ENLARGED ICONS */
+        .icon-btn img { width: 32px; height: 32px; filter: brightness(0) invert(1); opacity: 0.8; } 
+        .idle-svg { width: 32px; height: 32px; filter: brightness(0) invert(1); opacity: 0.8; }
+        .play-btn img { width: 48px; height: 48px; }
         
         .mini-controls { display: flex; align-items: center; gap: 12px; }
         .idle-extras { display: none; }
         .player-mini.idle .idle-extras { display: inline-flex; }
-        .player-mini.idle .mini-controls { gap: 16px; }
+        .player-mini.idle .mini-controls { gap: 20px; }
         .player-mini.idle .icon-btn, .player-mini.idle .play-btn { pointer-events: none; }
 
         /* Idle Center Logo */
         .idle-logo { display: flex; justify-content: center; opacity: 0.8; }
-        .idle-logo svg { width: 26px; height: 26px; fill: currentColor; }
+        .idle-logo svg { width: 34px; height: 34px; fill: currentColor; }
 
         /* Active Info */
-        .mini-center { display: flex; align-items: center; gap: 12px; min-width: 0; cursor: pointer; }
-        .mini-art { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; background: #27272a; }
+        .mini-center { display: flex; align-items: center; gap: 14px; min-width: 0; cursor: pointer; }
+        .mini-art { width: 52px; height: 52px; border-radius: 8px; object-fit: cover; background: #27272a; }
         .mini-info { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
-        .mini-title { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .mini-artist { font-size: 12px; color: var(--text-muted, #a1a1aa); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .mini-title { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .mini-artist { font-size: 13px; color: var(--text-muted, #a1a1aa); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
         /* Progress */
         .progress-row { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
@@ -109,14 +112,20 @@ export default function Player() {
         .full-title { font-size: 26px; font-weight: 700; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .full-artist { font-size: 15px; color: rgba(255,255,255,0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        .full-controls { display: flex; align-items: center; justify-content: center; gap: 20px; margin-top: 20px; }
+        .full-controls { display: flex; align-items: center; justify-content: center; gap: 24px; margin-top: 24px; }
 
         /* Mobile */
         @media (max-width: 640px) {
-          .player-mini { left: 8px; right: 8px; bottom: 8px; transform: none; width: auto; height: 64px; padding: 0 16px; border-radius: 32px; }
+          .player-mini { left: 8px; right: 8px; bottom: 8px; transform: none; width: auto; height: 68px; padding: 0 16px; border-radius: 34px; }
           .player-mini.hidden { transform: translateY(20px); }
-          .mini-art { width: 42px; height: 42px; }
+          .mini-art { width: 44px; height: 44px; }
           .progress-time { display: none; }
+          
+          /* Adjust icon sizes slightly for mobile */
+          .icon-btn img, .idle-svg { width: 28px; height: 28px; }
+          .play-btn img { width: 42px; height: 42px; }
+          .idle-logo svg { width: 30px; height: 30px; }
+          .player-mini.idle .mini-controls { gap: 12px; }
         }
       `}</style>
 
@@ -189,15 +198,15 @@ export default function Player() {
               <div className="full-artist">{current.artist}</div>
             </div>
             
-            <div className="progress-container" style={{ width: "100%", maxWidth: "480px", height: "4px" }}>
+            <div className="progress-container" style={{ width: "100%", maxWidth: "480px", height: "6px" }}>
               <div className="progress-fill" style={{ width: `${progress}%` }} />
               <input type="range" min="0" max={duration || 0} step="0.1" value={currentTime || 0} onChange={(e) => seek(Number(e.target.value))} />
             </div>
 
             <div className="full-controls">
-              <button className="icon-btn" onClick={prev}><img src="/fastbackwardicon.png" alt="Prev" style={{ width: 40, height: 40 }} /></button>
-              <button className="play-btn" onClick={playPause}><img src={playing ? "/pause_icon_transparent.png" : "/playicon.png"} alt="Play" style={{ width: 60, height: 60 }} /></button>
-              <button className="icon-btn" onClick={next}><img src="/fastforwardicon.png" alt="Next" style={{ width: 40, height: 40 }} /></button>
+              <button className="icon-btn" onClick={prev}><img src="/fastbackwardicon.png" alt="Prev" style={{ width: 44, height: 44 }} /></button>
+              <button className="play-btn" onClick={playPause}><img src={playing ? "/pause_icon_transparent.png" : "/playicon.png"} alt="Play" style={{ width: 72, height: 72 }} /></button>
+              <button className="icon-btn" onClick={next}><img src="/fastforwardicon.png" alt="Next" style={{ width: 44, height: 44 }} /></button>
             </div>
           </div>
         </div>
