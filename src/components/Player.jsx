@@ -30,11 +30,14 @@ export default function Player() {
 
   const hasTrack = !!current;
   const progress = hasTrack ? Math.min(100, Math.max(0, (currentTime / (duration || 1)) * 100)) : 0;
+  
+  // Format remaining time for full screen (e.g. -0:00)
+  const remainingTime = duration ? `-${fmt(Math.max(0, duration - currentTime))}` : "-0:00";
 
   return (
     <>
       <style>{`
-        /* ================= MINI PLAYER ================= */
+        /* ================= MINI PLAYER (UNTOUCHED) ================= */
         .player-mini {
           position: fixed; bottom: 20px;
           left: calc(50% + (var(--sidebar-width, 0px) / 2));
@@ -54,11 +57,9 @@ export default function Player() {
         }
         .player-mini.hidden { opacity: 0; pointer-events: none; transform: translateX(-50%) translateY(20px); }
 
-        /* Layouts */
         .player-mini.idle { grid-template-columns: 1fr auto 1fr; }
         .player-mini.active { grid-template-columns: auto 1fr; }
 
-        /* Icons & Buttons */
         .icon-btn, .play-btn {
           background: none; border: none; padding: 0; cursor: pointer;
           display: inline-flex; align-items: center; justify-content: center;
@@ -77,24 +78,18 @@ export default function Player() {
         .player-mini.idle .mini-controls { gap: 14px; }
         .player-mini.idle .icon-btn, .player-mini.idle .play-btn { pointer-events: none; }
 
-        /* Idle Center Logo (desktop) */
         .idle-logo { display: flex; justify-content: center; opacity: 0.8; }
         .idle-logo svg { width: 24px; height: 24px; fill: currentColor; }
 
-        /* Mobile-only idle artwork (hidden on desktop) */
         .idle-art-mobile { display: none; }
-
-        /* Idle speaker icon */
         .idle-speaker { display: flex; justify-content: flex-end; }
 
-        /* Active Info */
         .mini-center { display: flex; align-items: center; gap: 14px; min-width: 0; cursor: pointer; }
         .mini-art { width: 52px; height: 52px; border-radius: 8px; object-fit: cover; background: #27272a; }
         .mini-info { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
         .mini-title { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .mini-artist { font-size: 13px; color: var(--text-muted, #a1a1aa); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        /* Progress (Mini) */
         .progress-row { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
         .progress-time { font-size: 11px; color: var(--text-muted, #a1a1aa); min-width: 32px; }
         .progress-time.right { text-align: right; }
@@ -102,32 +97,66 @@ export default function Player() {
         .progress-fill { position: absolute; top: 0; left: 0; height: 100%; background: #fff; border-radius: 999px; pointer-events: none; }
         .progress-container input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 
-        /* ================= FULL-SCREEN PLAYER (FIXED UI) ================= */
-        .player-full { position: fixed; inset: 0; z-index: 2000; display: flex; flex-direction: column; overflow: hidden; color: #fff; opacity: 0; visibility: hidden; transform: translateY(40px); transition: all 0.32s ease; }
+        /* ================= FULL-SCREEN PLAYER (APPLE MUSIC STYLE) ================= */
+        .player-full { 
+          position: fixed; inset: 0; z-index: 2000; 
+          display: flex; flex-direction: column; 
+          overflow: hidden; color: #fff; 
+          opacity: 0; visibility: hidden; transform: translateY(40px); 
+          transition: all 0.32s ease; 
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
         .player-full.open { opacity: 1; visibility: visible; transform: translateY(0); }
-        .player-full-bg { position: absolute; inset: -40px; background-size: cover; background-position: center; filter: blur(60px) brightness(0.55); transform: scale(1.2); z-index: -2; }
-        .player-full-overlay { position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(0,0,0,0.25), rgba(0,0,0,0.85)); }
-
-        .full-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; font-size: 15px; font-weight: 500; }
-        .full-close { background: rgba(255,255,255,0.1); border: none; color: #fff; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
-        .full-close:hover { background: rgba(255,255,255,0.2); }
         
-        .full-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 24px; width: 100%; max-width: 500px; margin: 0 auto; }
-        .full-art-wrapper { width: min(78vw, 78vh, 420px); aspect-ratio: 1; border-radius: 16px; overflow: hidden; margin-bottom: 32px; box-shadow: 0 24px 60px rgba(0,0,0,0.6); }
+        /* Deep, blurred background */
+        .player-full-bg { position: absolute; inset: -40px; background-size: cover; background-position: center; filter: blur(80px) brightness(0.4); transform: scale(1.2); z-index: -2; }
+        .player-full-overlay { position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(0,0,0,0.1), rgba(0,0,0,0.7)); }
+
+        /* Header with Chevron Down */
+        .full-header { display: flex; justify-content: center; align-items: center; padding: 24px; position: relative; }
+        .full-close { background: rgba(255,255,255,0.15); border: none; color: #fff; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
+        .full-close svg { width: 20px; height: 20px; }
+
+        /* Body Layout */
+        .full-body { flex: 1; display: flex; flex-direction: column; padding: 0 24px 40px 24px; width: 100%; max-width: 500px; margin: 0 auto; justify-content: center; }
+        
+        /* Artwork */
+        .full-art-wrapper { width: 100%; max-width: 400px; aspect-ratio: 1; border-radius: 12px; overflow: hidden; margin: 0 auto 32px auto; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
         .full-art { width: 100%; height: 100%; object-fit: cover; }
         
-        .full-info { width: 100%; text-align: left; margin-bottom: 24px; }
-        .full-title { font-size: 26px; font-weight: 700; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .full-artist { font-size: 16px; color: rgba(255,255,255,0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        /* Info / Text */
+        .full-info { width: 100%; text-align: left; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-end; }
+        .full-text-content { flex: 1; min-width: 0; padding-right: 16px; }
+        .full-title { font-size: 24px; font-weight: 700; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.5px; }
+        .full-artist { font-size: 18px; color: rgba(255,255,255,0.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        /* Right side action buttons (Star & Dots) */
+        .full-actions { display: flex; gap: 16px; align-items: center; padding-bottom: 4px; }
+        .full-actions button { background: none; border: none; color: #fff; opacity: 0.8; cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center; }
+        .full-actions svg { width: 24px; height: 24px; }
 
-        /* Force explicit height on full-screen progress bar to fix giant box bug */
-        .full-progress { position: relative; width: 100%; height: 6px; background: rgba(255,255,255,0.2); border-radius: 999px; cursor: pointer; margin-bottom: 32px; }
-        .full-progress-fill { position: absolute; top: 0; left: 0; height: 100%; background: #fff; border-radius: 999px; pointer-events: none; }
-        .full-progress input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+        /* Progress Bar Area */
+        .full-progress-area { width: 100%; margin-bottom: 32px; }
+        .full-progress-bar { position: relative; width: 100%; height: 6px; background: rgba(255,255,255,0.2); border-radius: 999px; cursor: pointer; }
+        .full-progress-fill { position: absolute; top: 0; left: 0; height: 100%; background: rgba(255,255,255,0.8); border-radius: 999px; pointer-events: none; }
+        .full-progress-bar input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+        
+        .full-time-labels { display: flex; justify-content: space-between; margin-top: 12px; font-size: 13px; color: rgba(255,255,255,0.5); font-variant-numeric: tabular-nums; }
 
-        .full-controls { display: flex; align-items: center; justify-content: center; gap: 36px; }
-        .full-controls .icon-btn img { width: 44px; height: 44px; filter: brightness(0) invert(1); opacity: 0.9; }
+        /* Playback Controls */
+        .full-controls { display: flex; align-items: center; justify-content: space-between; padding: 0 16px; margin-bottom: 40px; }
+        .full-controls .icon-btn img { width: 48px; height: 48px; filter: brightness(0) invert(1); opacity: 0.9; }
         .full-controls .play-btn img { width: 72px; height: 72px; }
+
+        /* Volume / Bottom Area */
+        .full-bottom { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 8px; margin-bottom: 24px; }
+        .full-bottom svg { width: 16px; height: 16px; fill: rgba(255,255,255,0.5); }
+        .full-volume-bar { flex: 1; height: 6px; background: rgba(255,255,255,0.2); border-radius: 999px; position: relative; }
+        .full-volume-fill { position: absolute; top: 0; left: 0; height: 100%; background: rgba(255,255,255,0.8); border-radius: 999px; width: 50%; }
+        
+        /* Queue Button */
+        .full-queue { display: flex; justify-content: center; padding-bottom: 20px; }
+        .full-queue svg { width: 28px; height: 28px; fill: rgba(255,255,255,0.6); }
 
         /* ================= MOBILE (MINI PLAYER ONLY) ================= */
         @media (max-width: 640px) {
@@ -140,17 +169,13 @@ export default function Player() {
           }
           .player-mini.hidden { transform: translateY(20px); }
 
-          /* Active: [art] [title/artist] [play][next] */
           .player-mini.active { grid-template-columns: auto 1fr auto; }
-          /* Idle: [logo art] [spacer] [play][next] */
           .player-mini.idle { grid-template-columns: auto 1fr auto; }
 
-          /* Hide desktop-only idle pieces on mobile */
           .idle-logo { display: none; }
           .idle-extras { display: none !important; }
           .idle-speaker { display: none; }
 
-          /* Mobile idle artwork shows */
           .idle-art-mobile {
             display: flex; align-items: center; justify-content: center;
             width: 44px; height: 44px; border-radius: 8px;
@@ -158,19 +183,15 @@ export default function Player() {
           }
           .idle-art-mobile svg { width: 26px; height: 26px; fill: #f5f5f7; opacity: 0.9; }
 
-          /* Hide the desktop mini-controls container on mobile so we control order */
           .mini-controls { display: none; }
 
-          /* Compact active artwork + text */
           .mini-art { width: 44px; height: 44px; border-radius: 8px; }
           .mini-center { gap: 10px; }
           .mini-title { font-size: 14px; }
           .mini-artist { font-size: 12px; }
 
-          /* Hide progress + times on mobile */
           .progress-row { display: none; }
 
-          /* Mobile right-side controls — icons keep FULL size */
           .mobile-controls {
             display: flex; align-items: center; gap: 10px;
             justify-self: end;
@@ -179,12 +200,15 @@ export default function Player() {
           .mobile-controls .play-btn img { width: 32px; height: 32px; }
           .mobile-controls .icon-btn img { width: 22px; height: 22px; }
           
-          /* Small mobile tweaks for full screen */
+          /* Apple Music Full-Screen Mobile Tweaks */
+          .full-body { padding: 0 24px 20px 24px; justify-content: flex-start; margin-top: 20px; }
+          .full-art-wrapper { max-width: 320px; margin-bottom: 32px; }
           .full-title { font-size: 22px; }
-          .full-controls { gap: 24px; }
+          .full-artist { font-size: 16px; }
+          .full-controls .icon-btn img { width: 44px; height: 44px; }
+          .full-controls .play-btn img { width: 64px; height: 64px; }
         }
 
-        /* Hide mobile-only controls on desktop */
         @media (min-width: 641px) {
           .mobile-controls { display: none; }
           .idle-art-mobile { display: none !important; }
@@ -253,16 +277,17 @@ export default function Player() {
         </div>
       </div>
 
-      {/* ============ FULL-SCREEN PLAYER (FIXED) ============ */}
+      {/* ============ FULL-SCREEN PLAYER (MATCHES APPLE MUSIC IMAGE) ============ */}
       {hasTrack && (
         <div className={`player-full ${expanded ? "open" : ""}`}>
           <div className="player-full-bg" style={{ backgroundImage: `url(${current.artwork})` }} />
           <div className="player-full-overlay" />
           
           <div className="full-header">
-            <span>Now Playing</span>
             <button className="full-close" onClick={() => setExpanded(false)}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
             </button>
           </div>
 
@@ -272,21 +297,37 @@ export default function Player() {
             </div>
             
             <div className="full-info">
-              <div className="full-title">{current.title}</div>
-              <div className="full-artist">{current.artist}</div>
+              <div className="full-text-content">
+                <div className="full-title">{current.title}</div>
+                <div className="full-artist">{current.artist}</div>
+              </div>
+              <div className="full-actions">
+                {/* Star Icon */}
+                <button>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                  </svg>
+                </button>
+                {/* Dots Icon */}
+                <button>
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="5" cy="12" r="2"></circle>
+                    <circle cx="12" cy="12" r="2"></circle>
+                    <circle cx="19" cy="12" r="2"></circle>
+                  </svg>
+                </button>
+              </div>
             </div>
             
-            {/* FIXED: Replaced broken progress-container with dedicated full-progress bar */}
-            <div className="full-progress">
-              <div className="full-progress-fill" style={{ width: `${progress}%` }} />
-              <input 
-                type="range" 
-                min="0" 
-                max={duration || 0} 
-                step="0.1" 
-                value={currentTime || 0} 
-                onChange={(e) => seek(Number(e.target.value))} 
-              />
+            <div className="full-progress-area">
+              <div className="full-progress-bar">
+                <div className="full-progress-fill" style={{ width: `${progress}%` }} />
+                <input type="range" min="0" max={duration || 0} step="0.1" value={currentTime || 0} onChange={(e) => seek(Number(e.target.value))} />
+              </div>
+              <div className="full-time-labels">
+                <span>{fmt(currentTime)}</span>
+                <span>{remainingTime}</span>
+              </div>
             </div>
 
             <div className="full-controls">
@@ -299,6 +340,24 @@ export default function Player() {
               <button className="icon-btn" onClick={next}>
                 <img src="/fastforwardicon.png" alt="Next" />
               </button>
+            </div>
+
+            {/* Volume Bar (Visual only) */}
+            <div className="full-bottom">
+              <svg viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/></svg>
+              <div className="full-volume-bar">
+                <div className="full-volume-fill"></div>
+              </div>
+              <svg viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5zM15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14"/></svg>
+            </div>
+            
+            {/* Queue Icon */}
+            <div className="full-queue">
+              <svg viewBox="0 0 24 24">
+                <path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h10v2H4z"/>
+                <circle cx="18" cy="18" r="2"/>
+                <path d="M19 14v4"/>
+              </svg>
             </div>
           </div>
         </div>
