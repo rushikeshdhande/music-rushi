@@ -31,7 +31,6 @@ export default function Player() {
   const hasTrack = !!current;
   const progress = hasTrack ? Math.min(100, Math.max(0, (currentTime / (duration || 1)) * 100)) : 0;
   
-  // Format remaining time for full screen (e.g. -0:00)
   const remainingTime = duration ? `-${fmt(Math.max(0, duration - currentTime))}` : "-0:00";
 
   return (
@@ -97,66 +96,63 @@ export default function Player() {
         .progress-fill { position: absolute; top: 0; left: 0; height: 100%; background: #fff; border-radius: 999px; pointer-events: none; }
         .progress-container input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 
-        /* ================= FULL-SCREEN PLAYER (APPLE MUSIC STYLE) ================= */
+        /* ================= FULL-SCREEN PLAYER (REDUCED SIZES) ================= */
         .player-full { 
           position: fixed; inset: 0; z-index: 2000; 
           display: flex; flex-direction: column; 
           overflow: hidden; color: #fff; 
           opacity: 0; visibility: hidden; transform: translateY(40px); 
           transition: all 0.32s ease; 
-          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
         .player-full.open { opacity: 1; visibility: visible; transform: translateY(0); }
         
-        /* Deep, blurred background */
         .player-full-bg { position: absolute; inset: -40px; background-size: cover; background-position: center; filter: blur(80px) brightness(0.4); transform: scale(1.2); z-index: -2; }
         .player-full-overlay { position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(0,0,0,0.1), rgba(0,0,0,0.7)); }
 
-        /* Header with Chevron Down */
-        .full-header { display: flex; justify-content: center; align-items: center; padding: 24px; position: relative; }
-        .full-close { background: rgba(255,255,255,0.15); border: none; color: #fff; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
-        .full-close svg { width: 20px; height: 20px; }
+        /* Reduced header padding */
+        .full-header { display: flex; justify-content: center; align-items: center; padding: 16px; position: relative; }
+        .full-close { background: rgba(255,255,255,0.15); border: none; color: #fff; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
+        .full-close svg { width: 18px; height: 18px; }
 
-        /* Body Layout */
-        .full-body { flex: 1; display: flex; flex-direction: column; padding: 0 24px 40px 24px; width: 100%; max-width: 500px; margin: 0 auto; justify-content: center; }
+        /* Reduced body padding */
+        .full-body { flex: 1; display: flex; flex-direction: column; padding: 0 20px 24px 20px; width: 100%; max-width: 420px; margin: 0 auto; justify-content: center; }
         
-        /* Artwork */
-        .full-art-wrapper { width: 100%; max-width: 400px; aspect-ratio: 1; border-radius: 12px; overflow: hidden; margin: 0 auto 32px auto; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        /* Smaller Artwork */
+        .full-art-wrapper { width: 100%; max-width: 300px; aspect-ratio: 1; border-radius: 12px; overflow: hidden; margin: 0 auto 20px auto; box-shadow: 0 16px 40px rgba(0,0,0,0.5); }
         .full-art { width: 100%; height: 100%; object-fit: cover; }
         
-        /* Info / Text */
-        .full-info { width: 100%; text-align: left; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-end; }
-        .full-text-content { flex: 1; min-width: 0; padding-right: 16px; }
-        .full-title { font-size: 24px; font-weight: 700; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.5px; }
-        .full-artist { font-size: 18px; color: rgba(255,255,255,0.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        /* Smaller Text */
+        .full-info { width: 100%; text-align: left; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-end; }
+        .full-text-content { flex: 1; min-width: 0; padding-right: 12px; }
+        .full-title { font-size: 20px; font-weight: 700; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.3px; }
+        .full-artist { font-size: 15px; color: rgba(255,255,255,0.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
-        /* Right side action buttons (Star & Dots) */
-        .full-actions { display: flex; gap: 16px; align-items: center; padding-bottom: 4px; }
-        .full-actions button { background: none; border: none; color: #fff; opacity: 0.8; cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center; }
-        .full-actions svg { width: 24px; height: 24px; }
+        .full-actions { display: flex; gap: 12px; align-items: center; padding-bottom: 2px; }
+        .full-actions button { background: none; border: none; color: #fff; opacity: 0.7; cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center; }
+        .full-actions svg { width: 20px; height: 20px; }
 
-        /* Progress Bar Area */
-        .full-progress-area { width: 100%; margin-bottom: 32px; }
-        .full-progress-bar { position: relative; width: 100%; height: 6px; background: rgba(255,255,255,0.2); border-radius: 999px; cursor: pointer; }
+        /* Progress */
+        .full-progress-area { width: 100%; margin-bottom: 24px; }
+        .full-progress-bar { position: relative; width: 100%; height: 5px; background: rgba(255,255,255,0.2); border-radius: 999px; cursor: pointer; }
         .full-progress-fill { position: absolute; top: 0; left: 0; height: 100%; background: rgba(255,255,255,0.8); border-radius: 999px; pointer-events: none; }
         .full-progress-bar input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
-        
-        .full-time-labels { display: flex; justify-content: space-between; margin-top: 12px; font-size: 13px; color: rgba(255,255,255,0.5); font-variant-numeric: tabular-nums; }
+        .full-time-labels { display: flex; justify-content: space-between; margin-top: 8px; font-size: 12px; color: rgba(255,255,255,0.5); font-variant-numeric: tabular-nums; }
 
-        /* Playback Controls */
-        .full-controls { display: flex; align-items: center; justify-content: space-between; padding: 0 16px; margin-bottom: 40px; }
-        .full-controls .icon-btn img { width: 48px; height: 48px; filter: brightness(0) invert(1); opacity: 0.9; }
-        .full-controls .play-btn img { width: 72px; height: 72px; }
+        /* Smaller Controls */
+        .full-controls { display: flex; align-items: center; justify-content: space-between; padding: 0 12px; margin-bottom: 24px; }
+        .full-controls .icon-btn img { width: 40px; height: 40px; filter: brightness(0) invert(1); opacity: 0.9; }
+        .full-controls .play-btn img { width: 60px; height: 60px; }
 
-        /* Volume / Bottom Area */
-        .full-bottom { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 8px; margin-bottom: 24px; }
-        .full-bottom svg { width: 16px; height: 16px; fill: rgba(255,255,255,0.5); }
-        .full-volume-bar { flex: 1; height: 6px; background: rgba(255,255,255,0.2); border-radius: 999px; position: relative; }
+        /* Smaller Volume */
+        .full-bottom { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 4px; margin-bottom: 16px; }
+        .full-bottom svg { width: 14px; height: 14px; fill: rgba(255,255,255,0.5); }
+        .full-volume-bar { flex: 1; height: 5px; background: rgba(255,255,255,0.2); border-radius: 999px; position: relative; }
         .full-volume-fill { position: absolute; top: 0; left: 0; height: 100%; background: rgba(255,255,255,0.8); border-radius: 999px; width: 50%; }
         
-        /* Queue Button */
-        .full-queue { display: flex; justify-content: center; padding-bottom: 20px; }
-        .full-queue svg { width: 28px; height: 28px; fill: rgba(255,255,255,0.6); }
+        /* Smaller Queue Icon */
+        .full-queue { display: flex; justify-content: center; padding-bottom: 8px; }
+        .full-queue svg { width: 22px; height: 22px; fill: rgba(255,255,255,0.6); }
 
         /* ================= MOBILE (MINI PLAYER ONLY) ================= */
         @media (max-width: 640px) {
@@ -199,14 +195,6 @@ export default function Player() {
           }
           .mobile-controls .play-btn img { width: 32px; height: 32px; }
           .mobile-controls .icon-btn img { width: 22px; height: 22px; }
-          
-          /* Apple Music Full-Screen Mobile Tweaks */
-          .full-body { padding: 0 24px 20px 24px; justify-content: flex-start; margin-top: 20px; }
-          .full-art-wrapper { max-width: 320px; margin-bottom: 32px; }
-          .full-title { font-size: 22px; }
-          .full-artist { font-size: 16px; }
-          .full-controls .icon-btn img { width: 44px; height: 44px; }
-          .full-controls .play-btn img { width: 64px; height: 64px; }
         }
 
         @media (min-width: 641px) {
@@ -277,7 +265,7 @@ export default function Player() {
         </div>
       </div>
 
-      {/* ============ FULL-SCREEN PLAYER (MATCHES APPLE MUSIC IMAGE) ============ */}
+      {/* ============ FULL-SCREEN PLAYER ============ */}
       {hasTrack && (
         <div className={`player-full ${expanded ? "open" : ""}`}>
           <div className="player-full-bg" style={{ backgroundImage: `url(${current.artwork})` }} />
@@ -302,13 +290,11 @@ export default function Player() {
                 <div className="full-artist">{current.artist}</div>
               </div>
               <div className="full-actions">
-                {/* Star Icon */}
                 <button>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                   </svg>
                 </button>
-                {/* Dots Icon */}
                 <button>
                   <svg viewBox="0 0 24 24" fill="currentColor">
                     <circle cx="5" cy="12" r="2"></circle>
@@ -342,7 +328,6 @@ export default function Player() {
               </button>
             </div>
 
-            {/* Volume Bar (Visual only) */}
             <div className="full-bottom">
               <svg viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/></svg>
               <div className="full-volume-bar">
@@ -351,7 +336,6 @@ export default function Player() {
               <svg viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5zM15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14"/></svg>
             </div>
             
-            {/* Queue Icon */}
             <div className="full-queue">
               <svg viewBox="0 0 24 24">
                 <path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h10v2H4z"/>
