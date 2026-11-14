@@ -164,12 +164,13 @@ export default function Player() {
           /* Hide progress + times on mobile */
           .progress-row { display: none; }
 
-          /* Mobile right-side controls */
+          /* Mobile right-side controls — icons keep FULL size */
           .mobile-controls {
-            display: flex; align-items: center; gap: 8px;
+            display: flex; align-items: center; gap: 10px;
             justify-self: end;
+            flex-shrink: 0;
           }
-          .mobile-controls .play-btn img { width: 30px; height: 30px; }
+          .mobile-controls .play-btn img { width: 32px; height: 32px; }
           .mobile-controls .icon-btn img { width: 22px; height: 22px; }
         }
 
@@ -235,7 +236,7 @@ export default function Player() {
           </>
         )}
 
-        {/* Mobile right-side controls: play/pause + forward only */}
+        {/* Mobile right-side controls: play/pause + forward (full-size icons) */}
         <div className="mobile-controls">
           <button className="play-btn" onClick={playPause} disabled={!hasTrack}>
             <img src={playing ? "/pause_icon_transparent.png" : "/playicon.png"} alt="Play" />
