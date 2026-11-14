@@ -12,6 +12,11 @@ export default function Player() {
   const { current, playing, currentTime, duration, playPause, next, prev, seek } = usePlayer();
   const [expanded, setExpanded] = useState(false);
 
+  // Cannot expand the full-screen player if there's no track
+  useEffect(() => {
+    if (!current && expanded) setExpanded(false);
+  }, [current, expanded]);
+
   useEffect(() => {
     document.body.style.overflow = expanded ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
@@ -24,9 +29,14 @@ export default function Player() {
     return () => window.removeEventListener("keydown", onKey);
   }, [expanded]);
 
-  if (!current) return null;
-
-  const progress = Math.min(100, Math.max(0, (currentTime / (duration || 1)) * 100));
+  // Safe defaults when nothing is playing
+  const hasTrack = !!current;
+  const progress = hasTrack
+    ? Math.min(100, Math.max(0, (currentTime / (duration || 1)) * 100))
+    : 0;
+  const artwork = current?.artwork || "/default-artwork.png";
+  const title = current?.title || "No song playing";
+  const artist = current?.artist || "Pick a song to start listening";
 
   return (
     <>
@@ -57,6 +67,19 @@ export default function Player() {
           transition: background 0.3s ease, border-color 0.3s ease, opacity 0.2s, transform 0.2s;
         }
         .player-mini.hidden { opacity: 0; pointer-events: none; transform: translateX(-50%) translateY(20px); }
+
+        /* Disabled / idle state */
+        .player-mini.idle { opacity: 0.85; }
+        .player-mini.idle .icon-btn,
+        .player-mini.idle .play-btn,
+        .player-mini.idle .mini-center,
+        .player-mini.idle .progress-container { cursor: default; }
+        .player-mini.idle .icon-btn,
+        .player-mini.idle .play-btn { opacity: 0.35; pointer-events: none; }
+        .player-mini.idle .mini-center { pointer-events: none; }
+        .player-mini.idle .progress-container { opacity: 0.5; }
+        .player-mini.idle .progress-container input[type="range"] { pointer-events: none; }
+        .player-mini.idle .mini-title { color: var(--text-muted, #a1a1aa); font-weight: 500; }
 
         /* ===== Control cluster: prev | play | next (all same visual weight) ===== */
         .mini-controls {
@@ -343,39 +366,85 @@ export default function Player() {
         }
       `}</style>
 
-      {/* ============ MINI PLAYER ============ */}
-      <div className={`player-mini ${expanded ? "hidden" : ""}`}>
+      {/* ============ MINI PLAYER (always visible) ============ */}
+      <div className={`player-mini ${expanded ? "hidden" : ""} ${!hasTrack ? "idle" : ""}`}>
         <div className="mini-controls">
-          <button className="icon-btn" onClick={prev} aria-label="Previous">
+          <button className="icon-btn" onClick={prev} aria-label="Previous" disabled={!hasTrack}>
             <img src="/fastbackwardicon.png" alt="" />
           </button>
-          <button className="play-btn" onClick={playPause} aria-label={playing ? "Pause" : "Play"}>
+          <button className="play-btn" onClick={playPause} aria-label={playing ? "Pause" : "Play"} disabled={!hasTrack}>
             <img
               src={playing ? "/pause_icon_transparent.png" : "/playicon.png"}
               alt=""
             />
           </button>
-          <button className="icon-btn" onClick={next} aria-label="Next">
+          <button className="icon-btn" onClick={next} aria-label="Next" disabled={!hasTrack}>
             <img src="/fastforwardicon.png" alt="" />
           </button>
         </div>
 
         <div
           className="mini-center"
-          onClick={() => setExpanded(true)}
+          onClick={() => { if (hasTrack) setExpanded(true); }}
           role="button"
-          tabIndex={0}
-          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setExpanded(true); } }}
-          aria-label="Open full screen player"
+          tabIndex={hasTrack ? 0 : -1}
+          onKeyDown={(e) => {
+            if (!hasTrack) return;
+            if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setExpanded(true); }
+          }}
+          aria-label={hasTrack ? "Open full screen player" : "No song playing"}
+          aria-disabled={!hasTrack}
         >
-          <img src={current.artwork} alt={`${current.title} artwork`} className="mini-art" />
+          <img src={artwork} alt={hasTrack ? `${title} artwork` : "No artwork"} className="mini-art" />
           <div className="mini-info">
-            <div className="mini-title">{current.title}</div>
-            <div className="mini-artist">{current.artist}</div>
+            <div className="mini-title">{title}</div>
+            <div className="mini-artist">{artist}</div>
             <div className="progress-row">
-              <span className="progress-time">{fmt(currentTime)}</span>
+              <span className="progress-time">{fmt(hasTrack ? currentTime : 0)}</span>
               <div className="progress-container" onClick={(e) => e.stopPropagation()}>
                 <div className="progress-fill" style={{ width: `${progress}%` }} />
+                <input
+                  type="range" min="0" max={duration || 0} step="0.1"
+                  value={hasTrack ? (currentTime || 0) : 0}
+                  onChange={(e) => hasTrack && seek(Number(e.target.value))}
+                  disabled={!hasTrack}
+                  aria-label="Seek"
+                />
+              </div>
+              <span className="progress-time right">{fmt(hasTrack ? duration : 0)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ============ FULL-SCREEN PLAYER (only when a track exists) ============ */}
+      {hasTrack && (
+        <div className={`player-full ${expanded ? "open" : ""}`} aria-hidden={!expanded}>
+          <div className="player-full-bg" style={{ backgroundImage: `url(${artwork})` }} />
+          <div className="player-full-overlay" />
+
+          <div className="full-header">
+            <span className="full-header-label">Now Playing</span>
+            <button className="full-close" onClick={() => setExpanded(false)} aria-label="Close full screen player">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+          </div>
+
+          <div className="full-body">
+            <div className="full-art-wrapper">
+              <img src={artwork} alt={`${title} artwork`} className="full-art" />
+            </div>
+
+            <div className="full-info">
+              <div className="full-title">{title}</div>
+              <div className="full-artist">{artist}</div>
+            </div>
+
+            <div className="full-progress">
+              <div className="full-progress-container">
+                <div className="full-progress-fill" style={{ width: `${progress}%` }} />
                 <input
                   type="range" min="0" max={duration || 0} step="0.1"
                   value={currentTime || 0}
@@ -383,68 +452,29 @@ export default function Player() {
                   aria-label="Seek"
                 />
               </div>
-              <span className="progress-time right">{fmt(duration)}</span>
+              <div className="full-progress-times">
+                <span>{fmt(currentTime)}</span>
+                <span>{fmt(duration)}</span>
+              </div>
+            </div>
+
+            <div className="full-controls">
+              <button className="full-ctrl" onClick={prev} aria-label="Previous">
+                <img src="/fastbackwardicon.png" alt="" />
+              </button>
+              <button className="full-play-btn" onClick={playPause} aria-label={playing ? "Pause" : "Play"}>
+                <img
+                  src={playing ? "/pause_icon_transparent.png" : "/playicon.png"}
+                  alt=""
+                />
+              </button>
+              <button className="full-ctrl" onClick={next} aria-label="Next">
+                <img src="/fastforwardicon.png" alt="" />
+              </button>
             </div>
           </div>
         </div>
-      </div>
-
-      {/* ============ FULL-SCREEN PLAYER ============ */}
-      <div className={`player-full ${expanded ? "open" : ""}`} aria-hidden={!expanded}>
-        <div className="player-full-bg" style={{ backgroundImage: `url(${current.artwork})` }} />
-        <div className="player-full-overlay" />
-
-        <div className="full-header">
-          <span className="full-header-label">Now Playing</span>
-          <button className="full-close" onClick={() => setExpanded(false)} aria-label="Close full screen player">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          </button>
-        </div>
-
-        <div className="full-body">
-          <div className="full-art-wrapper">
-            <img src={current.artwork} alt={`${current.title} artwork`} className="full-art" />
-          </div>
-
-          <div className="full-info">
-            <div className="full-title">{current.title}</div>
-            <div className="full-artist">{current.artist}</div>
-          </div>
-
-          <div className="full-progress">
-            <div className="full-progress-container">
-              <div className="full-progress-fill" style={{ width: `${progress}%` }} />
-              <input
-                type="range" min="0" max={duration || 0} step="0.1"
-                value={currentTime || 0}
-                onChange={(e) => seek(Number(e.target.value))}
-                aria-label="Seek"
-              />
-            </div>
-            <div className="full-progress-times">
-              <span>{fmt(currentTime)}</span>
-              <span>{fmt(duration)}</span>
-            </div>
-          </div>
-
-          <div className="full-controls">
-            <button className="full-ctrl" onClick={prev} aria-label="Previous">
-              <img src="/fastbackwardicon.png" alt="" />
-            </button>
-            <button className="full-play-btn" onClick={playPause} aria-label={playing ? "Pause" : "Play"}>
-              <img
-                src={playing ? "/pause_icon_transparent.png" : "/playicon.png"}
-                alt=""
-              />
-            </button>
-            <button className="full-ctrl" onClick={next} aria-label="Next">
-              <img src="/fastforwardicon.png" alt="" />
-            </button>
-          </div>
-        </div>
-      </div>
+      )}
     </>
   );
 }
