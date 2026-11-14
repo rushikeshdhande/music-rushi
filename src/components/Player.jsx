@@ -51,7 +51,7 @@ export default function Player() {
           border-radius: 0px;
           border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
           box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-          z-index: 3000; /* ABOVE .player-full (2000) so it stays visible when expanded */
+          z-index: 3000; /* ABOVE .player-full (2000) — always visible */
           color: var(--text-main, #f5f5f7);
           font-family: 'Inter', system-ui, -apple-system, sans-serif;
           transition: background 0.3s ease, border-color 0.3s ease;
@@ -328,6 +328,9 @@ export default function Player() {
           .full-play-btn img { width: 52px; height: 52px; }
           .full-ctrl { width: 54px; height: 54px; }
           .full-ctrl img { width: 34px; height: 34px; }
+
+          /* Leave room for the mini player at the bottom so full-screen controls aren't covered */
+          .full-body { padding-bottom: 80px; }
         }
 
         @media (max-width: 380px) {
@@ -341,7 +344,7 @@ export default function Player() {
         }
       `}</style>
 
-      {/* ============ MINI PLAYER (always visible — sits above full player) ============ */}
+      {/* ============ MINI PLAYER — always visible, on top of full player ============ */}
       <div className="player-mini">
         <div className="mini-controls">
           <button className="icon-btn" onClick={prev} aria-label="Previous">
