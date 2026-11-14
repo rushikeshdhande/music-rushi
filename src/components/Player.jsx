@@ -67,20 +67,20 @@ export default function Player() {
         .icon-btn:hover, .icon-btn:hover .idle-svg { opacity: 1; transform: scale(1.08); }
         .play-btn:hover { transform: scale(1.08); }
         
-        /* ENLARGED ICONS */
-        .icon-btn img { width: 32px; height: 32px; filter: brightness(0) invert(1); opacity: 0.8; } 
-        .idle-svg { width: 32px; height: 32px; filter: brightness(0) invert(1); opacity: 0.8; }
-        .play-btn img { width: 48px; height: 48px; }
+        /* SMALLER MINI PLAYER ICONS */
+        .icon-btn img { width: 22px; height: 22px; filter: brightness(0) invert(1); opacity: 0.8; } 
+        .idle-svg { width: 22px; height: 22px; filter: brightness(0) invert(1); opacity: 0.8; }
+        .play-btn img { width: 32px; height: 32px; }
         
-        .mini-controls { display: flex; align-items: center; gap: 12px; }
+        .mini-controls { display: flex; align-items: center; gap: 8px; }
         .idle-extras { display: none; }
         .player-mini.idle .idle-extras { display: inline-flex; }
-        .player-mini.idle .mini-controls { gap: 20px; }
+        .player-mini.idle .mini-controls { gap: 14px; }
         .player-mini.idle .icon-btn, .player-mini.idle .play-btn { pointer-events: none; }
 
         /* Idle Center Logo */
         .idle-logo { display: flex; justify-content: center; opacity: 0.8; }
-        .idle-logo svg { width: 34px; height: 34px; fill: currentColor; }
+        .idle-logo svg { width: 24px; height: 24px; fill: currentColor; }
 
         /* Active Info */
         .mini-center { display: flex; align-items: center; gap: 14px; min-width: 0; cursor: pointer; }
@@ -121,11 +121,11 @@ export default function Player() {
           .mini-art { width: 44px; height: 44px; }
           .progress-time { display: none; }
           
-          /* Adjust icon sizes slightly for mobile */
-          .icon-btn img, .idle-svg { width: 28px; height: 28px; }
-          .play-btn img { width: 42px; height: 42px; }
-          .idle-logo svg { width: 30px; height: 30px; }
-          .player-mini.idle .mini-controls { gap: 12px; }
+          /* Even smaller icons on mobile */
+          .icon-btn img, .idle-svg { width: 20px; height: 20px; }
+          .play-btn img { width: 30px; height: 30px; }
+          .idle-logo svg { width: 22px; height: 22px; }
+          .player-mini.idle .mini-controls { gap: 10px; }
         }
       `}</style>
 
