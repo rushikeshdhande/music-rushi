@@ -40,7 +40,7 @@ export default function Player() {
           width: calc(100% - var(--sidebar-width, 0px) - 48px);
           max-width: 820px;
           height: 76px;
-          padding: 0 18px;
+          padding: 0 22px;
           display: grid;
           grid-template-columns: auto 1fr auto;
           align-items: center;
@@ -48,7 +48,7 @@ export default function Player() {
           background: var(--player-bg, rgba(24, 24, 27, 0.72));
           backdrop-filter: blur(24px) saturate(140%);
           -webkit-backdrop-filter: blur(24px) saturate(140%);
-          border-radius: 0px;
+          border-radius: 38px; /* pill shape — half of 76px height */
           border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
           box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
           z-index: 1000;
@@ -303,8 +303,8 @@ export default function Player() {
           .player-mini {
             left: 8px; right: 8px; bottom: 8px;
             transform: none; width: auto;
-            height: 64px; padding: 0 12px;
-            border-radius: 14px;
+            height: 64px; padding: 0 14px;
+            border-radius: 32px; /* pill — half of 64px height */
             grid-template-columns: 1fr auto; gap: 8px;
             overflow: hidden;
           }
@@ -333,7 +333,7 @@ export default function Player() {
         }
 
         @media (max-width: 380px) {
-          .player-mini { height: 60px; padding: 0 10px; }
+          .player-mini { height: 60px; padding: 0 12px; border-radius: 30px; } /* pill — half of 60px */
           .mini-art { width: 38px; height: 38px; }
           .icon-btn { width: 34px; height: 34px; }
           .icon-btn img { width: 22px; height: 22px; }
