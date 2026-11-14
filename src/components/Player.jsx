@@ -12,7 +12,6 @@ export default function Player() {
   const { current, playing, currentTime, duration, playPause, next, prev, seek } = usePlayer();
   const [expanded, setExpanded] = useState(false);
 
-  // Cannot expand the full-screen player if there's no track
   useEffect(() => {
     if (!current && expanded) setExpanded(false);
   }, [current, expanded]);
@@ -29,14 +28,13 @@ export default function Player() {
     return () => window.removeEventListener("keydown", onKey);
   }, [expanded]);
 
-  // Safe defaults when nothing is playing
   const hasTrack = !!current;
   const progress = hasTrack
     ? Math.min(100, Math.max(0, (currentTime / (duration || 1)) * 100))
     : 0;
-  const artwork = current?.artwork || "/default-artwork.png";
-  const title = current?.title || "No song playing";
-  const artist = current?.artist || "Pick a song to start listening";
+  const artwork = current?.artwork || "";
+  const title = current?.title || "";
+  const artist = current?.artist || "";
 
   return (
     <>
@@ -68,20 +66,24 @@ export default function Player() {
         }
         .player-mini.hidden { opacity: 0; pointer-events: none; transform: translateX(-50%) translateY(20px); }
 
-        /* Disabled / idle state */
+        /* ============ IDLE STATE (no song playing) ============ */
         .player-mini.idle { opacity: 0.85; }
-        .player-mini.idle .icon-btn,
-        .player-mini.idle .play-btn,
-        .player-mini.idle .mini-center,
-        .player-mini.idle .progress-container { cursor: default; }
+
+        /* Hide artwork / title / artist / progress when idle */
+        .player-mini.idle .mini-art,
+        .player-mini.idle .mini-title,
+        .player-mini.idle .mini-artist,
+        .player-mini.idle .progress-row { display: none; }
+
+        /* Controls visible but disabled + dimmed */
         .player-mini.idle .icon-btn,
         .player-mini.idle .play-btn { opacity: 0.35; pointer-events: none; }
+        .player-mini.idle .icon-btn:hover,
+        .player-mini.idle .play-btn:hover { background: none; transform: none; }
         .player-mini.idle .mini-center { pointer-events: none; }
-        .player-mini.idle .progress-container { opacity: 0.5; }
-        .player-mini.idle .progress-container input[type="range"] { pointer-events: none; }
-        .player-mini.idle .mini-title { color: var(--text-muted, #a1a1aa); font-weight: 500; }
+        .player-mini.idle .mini-controls { cursor: default; }
 
-        /* ===== Control cluster: prev | play | next (all same visual weight) ===== */
+        /* ===== Control cluster: prev | play | next ===== */
         .mini-controls {
           display: flex;
           align-items: center;
@@ -383,38 +385,35 @@ export default function Player() {
           </button>
         </div>
 
-        <div
-          className="mini-center"
-          onClick={() => { if (hasTrack) setExpanded(true); }}
-          role="button"
-          tabIndex={hasTrack ? 0 : -1}
-          onKeyDown={(e) => {
-            if (!hasTrack) return;
-            if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setExpanded(true); }
-          }}
-          aria-label={hasTrack ? "Open full screen player" : "No song playing"}
-          aria-disabled={!hasTrack}
-        >
-          <img src={artwork} alt={hasTrack ? `${title} artwork` : "No artwork"} className="mini-art" />
-          <div className="mini-info">
-            <div className="mini-title">{title}</div>
-            <div className="mini-artist">{artist}</div>
-            <div className="progress-row">
-              <span className="progress-time">{fmt(hasTrack ? currentTime : 0)}</span>
-              <div className="progress-container" onClick={(e) => e.stopPropagation()}>
-                <div className="progress-fill" style={{ width: `${progress}%` }} />
-                <input
-                  type="range" min="0" max={duration || 0} step="0.1"
-                  value={hasTrack ? (currentTime || 0) : 0}
-                  onChange={(e) => hasTrack && seek(Number(e.target.value))}
-                  disabled={!hasTrack}
-                  aria-label="Seek"
-                />
+        {hasTrack && (
+          <div
+            className="mini-center"
+            onClick={() => setExpanded(true)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setExpanded(true); } }}
+            aria-label="Open full screen player"
+          >
+            <img src={artwork} alt={`${title} artwork`} className="mini-art" />
+            <div className="mini-info">
+              <div className="mini-title">{title}</div>
+              <div className="mini-artist">{artist}</div>
+              <div className="progress-row">
+                <span className="progress-time">{fmt(currentTime)}</span>
+                <div className="progress-container" onClick={(e) => e.stopPropagation()}>
+                  <div className="progress-fill" style={{ width: `${progress}%` }} />
+                  <input
+                    type="range" min="0" max={duration || 0} step="0.1"
+                    value={currentTime || 0}
+                    onChange={(e) => seek(Number(e.target.value))}
+                    aria-label="Seek"
+                  />
+                </div>
+                <span className="progress-time right">{fmt(duration)}</span>
               </div>
-              <span className="progress-time right">{fmt(hasTrack ? duration : 0)}</span>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* ============ FULL-SCREEN PLAYER (only when a track exists) ============ */}
