@@ -125,16 +125,23 @@ export default function Player() {
         }
         .player-full.open{opacity:1;visibility:visible;transform:translateY(0)}
 
-        /* Top Header (Transparent Backgrounds) */
-        .full-header{display:flex;justify-content:space-between;align-items:center;padding:16px;padding-top:max(20px, env(safe-area-inset-top));z-index:10}
+        /* Top Header */
+        .full-header{display:flex;justify-content:space-between;align-items:center;padding:16px;padding-top:max(20px, env(safe-area-inset-top));z-index:20}
         .full-close, .full-dots-btn {background:transparent;border:none;color:#fff;width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:opacity 0.2s}
         .full-close:hover, .full-dots-btn:hover {opacity:0.7}
         .full-close svg{width:22px;height:22px}
         .full-dots-btn svg{width:24px;height:24px}
 
-        /* Dropdown Menu */
-        .menu-container { position: relative; }
-        .popup-menu { position: absolute; top: 100%; right: 0; margin-top: 8px; background: #2c2c2e; border-radius: 12px; padding: 4px 0; min-width: 180px; box-shadow: 0 12px 32px rgba(0,0,0,0.5); z-index: 100; }
+        /* Dropdown Menu (Fixed position & high z-index) */
+        .menu-container { position: relative; display: flex; align-items: center; justify-content: center; }
+        .popup-menu { 
+          position: absolute; top: 40px; right: 0; 
+          background: #2c2c2e; border-radius: 12px; padding: 4px 0; min-width: 180px; 
+          box-shadow: 0 12px 32px rgba(0,0,0,0.6); 
+          z-index: 9999; 
+          animation: fadeIn 0.15s ease-out;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
         .menu-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; font-size: 15px; color: #fff; cursor: pointer; transition: background 0.2s; }
         .menu-item:hover { background: rgba(255,255,255,0.1); }
 
@@ -145,7 +152,7 @@ export default function Player() {
         .full-art-wrapper{
           width:100%;max-width:320px;aspect-ratio:1;border-radius:12px;overflow:hidden;margin:0 auto 32px;
           box-shadow:0 24px 60px rgba(0,0,0,0.4);background:#27272a;
-          transition: transform 0.4s ease;
+          transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
           transform: scale(${playing ? 1 : 0.85});
         }
         .full-art{width:100%;height:100%;object-fit:cover}
@@ -256,6 +263,7 @@ export default function Player() {
               <button className="full-dots-btn" onClick={() => setMenuOpen(!menuOpen)} aria-label="More">
                 <Icons.Dots />
               </button>
+              
               {menuOpen && (
                 <div className="popup-menu">
                   <div className="menu-item" onClick={handleShare}>
