@@ -4,8 +4,9 @@ import { NavLink, useLocation } from "react-router-dom";
 import { useSyncStore } from "../lib/syncStore";
 
 const APP_URL = "https://rushicdhande.vercel.app/music";
-const HEADER_COLOR = "#35145a";
+const HEADER_COLOR = "#232323";
 const HEADER_HEIGHT = 60;
+const HEADER_ALPHA = 0.72; // 0 = fully transparent, 1 = solid
 
 /* ── Icons ────────────────────────────────────────────────────── */
 const S = ({ size = 18, sw = 2, fill = "none", children }) => (
@@ -65,15 +66,18 @@ export default function Navbar() {
   return (
     <>
       <style>{`
-        /* ============ MOBILE HEADER (solid, always visible) ============ */
+        /* ============ MOBILE HEADER (translucent #232323) ============ */
         .mobile-header {
           display: none;
           position: fixed; top: 0; left: 0; right: 0;
           height: ${HEADER_HEIGHT}px; padding: 0 14px;
           grid-template-columns: 1fr auto 1fr; align-items: center;
-          background: ${HEADER_COLOR}; color: #fff;
-          z-index: 1300; /* above the sliding panel */
-          box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06);
+          background: rgba(35, 35, 35, ${HEADER_ALPHA}); /* #232323 @ ${Math.round(HEADER_ALPHA * 100)}% */
+          backdrop-filter: blur(14px) saturate(1.2);
+          -webkit-backdrop-filter: blur(14px) saturate(1.2);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+          color: #fff;
+          z-index: 1300;
         }
         .header-icon-btn {
           display: flex; align-items: center; justify-content: flex-start;
@@ -84,7 +88,7 @@ export default function Navbar() {
         .app-btn {
           justify-self: end; display: flex; align-items: center;
           height: 28px; padding: 0 16px; border-radius: 999px;
-          background: #fff; color: ${HEADER_COLOR};
+          background: #fff; color: #232323;
           font-size: 16px; font-weight: 700; text-decoration: none;
           transition: opacity 0.2s ease, transform 0.2s ease;
         }
@@ -130,20 +134,18 @@ export default function Navbar() {
 
           .navbar {
             width: 100%;
-            /* sits directly below the fixed header, not over it */
             top: ${HEADER_HEIGHT}px;
             bottom: 0;
             left: 0; right: 0;
             border: 0; box-shadow: none;
             z-index: 1200;
 
-            /* purple frosted glass, 36% transparent */
+            /* same #232323 tint as the header, slightly more transparent */
             background:
-              linear-gradient(180deg, rgba(53, 20, 90, 0.42) 0%, rgba(53, 20, 90, 0.30) 100%);
+              linear-gradient(180deg, rgba(35, 35, 35, 0.62) 0%, rgba(35, 35, 35, 0.52) 100%);
             backdrop-filter: blur(28px) saturate(1.35);
             -webkit-backdrop-filter: blur(28px) saturate(1.35);
 
-            /* closed state: pulled up behind the header */
             transform: translateY(-100%);
             opacity: 0;
             visibility: hidden;
@@ -171,7 +173,6 @@ export default function Navbar() {
           .nav-item.active { background: rgba(255, 255, 255, 0.14); font-weight: 700; }
           .nav-item-small { height: 38px; font-size: 16px; }
 
-          /* staggered reveal */
           .navbar .nav-item {
             opacity: 0;
             transform: translateY(-8px);
@@ -186,7 +187,7 @@ export default function Navbar() {
         }
       `}</style>
 
-      {/* ============ MOBILE HEADER (solid) ============ */}
+      {/* ============ MOBILE HEADER ============ */}
       <header className={`mobile-header ${isOpen ? "open" : ""}`}>
         <button className="header-icon-btn" onClick={() => setIsOpen(!isOpen)} aria-label="Toggle menu">
           {isOpen ? <Icons.Close /> : <Icons.Menu />}
@@ -195,7 +196,7 @@ export default function Navbar() {
         <a className="app-btn" href={APP_URL} target="_blank" rel="noopener noreferrer">App</a>
       </header>
 
-      {/* ============ SLIDING PANEL (below header) / DESKTOP SIDEBAR ============ */}
+      {/* ============ SLIDING PANEL / DESKTOP SIDEBAR ============ */}
       <aside className={`navbar ${isAlbumDetails ? "navbar-on-album" : ""} ${isOpen ? "navbar-open" : ""}`}>
         <header className="navbar-header">
           <div className="navbar-logo"><Icons.Logo /><span>Music</span></div>
