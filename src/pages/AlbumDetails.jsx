@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { findAlbumByNumericId } from "../data/remoteAlbums";
 import { usePlayer } from "../contexts/PlayerContext";
-import { shareSong, shareAlbum, songShareUrl } from "../lib/shareUrl";
+import { shareSong, songShareUrl } from "../lib/shareUrl";
 
 /* ── Helpers ──────────────────────────────────────────────────── */
 const optimizeUrl = (url, w) =>
@@ -88,6 +88,10 @@ const copy = async (text, ok, fail) => {
   try { await navigator.clipboard.writeText(text); showToast(ok); } catch { showToast(fail); }
 };
 
+// "Kesariya (Remix)" -> "kesariya-remix" (keeps Hindi / other letters)
+const slugify = (str) =>
+  String(str || "").toLowerCase().replace(/&/g, " and ").replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-+|-+$/g, "") || "album";
+
 // Audio link: known field names first, then any string field that looks like audio
 const AUDIO_RE = /\.(mp3|m4a|aac|wav|ogg|opus|flac)(\?|$)|\/video\/upload\/|\/audio\//i;
 const AUDIO_KEYS = ["audioUrl", "audio", "url", "src", "preview", "previewUrl", "file", "link", "path", "mp3", "streamUrl"];
@@ -123,8 +127,6 @@ const readDuration = (song) => {
   return song.durationMs != null || song.duration_ms != null || n > 36000 ? n / 1000 : n;
 };
 
-const songImage = (song, album) => song.artwork || song.image || song.cover || song.thumbnail || album.artwork;
-
 // True on phone-sized screens
 const useIsMobile = (max = 640) => {
   const q = `(max-width: ${max}px)`;
@@ -146,8 +148,8 @@ const ShareIcon = () => (
     <line x1="12" y1="2" x2="12" y2="15" />
   </svg>
 );
-const DotsIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+const DotsIcon = ({ vertical }) => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style={vertical ? { transform: "rotate(90deg)" } : undefined}>
     <circle cx="5" cy="12" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="19" cy="12" r="2" />
   </svg>
 );
@@ -246,6 +248,28 @@ const AlbumDetails = () => {
 
   const playAt = (i) => { setActiveIndex(i); loadAndPlay(album.songs, i); };
 
+  // ONE clean link with the album name: /…/album/<album-name>/<id>
+  const albumUrl = () => {
+    const segs = window.location.pathname.split("/").filter(Boolean);
+    const hasName = id && albumName; // route has both params
+    const idLast = !hasName || segs[segs.length - 1] === id; // keep the route's own order
+    const prefix = segs.slice(0, hasName ? -2 : -1);
+    const slug = slugify(album.name);
+    const idSeg = id || albumName;
+    return `${window.location.origin}/${[...prefix, ...(idLast ? [slug, idSeg] : [idSeg, slug])].join("/")}`;
+  };
+
+  // Share ONLY the url (no url inside text), so apps show a single link
+  const shareAlbumLink = async () => {
+    const url = albumUrl();
+    try {
+      if (navigator.share) await navigator.share({ title: album.name, url });
+      else { await navigator.clipboard.writeText(url); showToast("Link Copied!"); }
+    } catch (e) {
+      if (e?.name !== "AbortError") showToast("Failed to share link.");
+    }
+  };
+
   const menuItems = (song) => [
     ["View Credits", "ⓘ", () => {}],
     ["Share Song", "⤴", () => shareSong(song)],
@@ -261,7 +285,7 @@ const AlbumDetails = () => {
     <div style={{ ...s.page, background: c.page, color: c.text }}>
       {/* TOP RIGHT: share + 3 dots (one pill on mobile) */}
       <div style={mx("topActions")}>
-        <button style={topBtn} onClick={() => shareAlbum(album)} title="Share Album"><ShareIcon /></button>
+        <button style={topBtn} onClick={shareAlbumLink} title="Share Album"><ShareIcon /></button>
         <button style={topBtn} title="More options"><DotsIcon /></button>
       </div>
 
@@ -290,8 +314,9 @@ const AlbumDetails = () => {
         </div>
       </div>
 
-      {/* TRACKLIST */}
+      {/* TRACKLIST: number · title / artist · ⋮ */}
       <div style={s.tracks}>
+        <div style={s.divider} />
         {album.songs.map((song, i) => {
           const active = activeIndex === i;
           const open = menuOpenId === i;
@@ -301,53 +326,45 @@ const AlbumDetails = () => {
             <div
               key={`${song.id ?? "song"}-${i}`}
               style={{ ...s.track, background: active || open ? "rgba(255,255,255,0.12)" : "transparent", zIndex: open ? 100 : 1 }}
+              onClick={() => playAt(i)}
               onMouseEnter={hover("rgba(255,255,255,0.07)")}
               onMouseLeave={hover("transparent")}
             >
               <span style={{ ...s.trackNum, color: active ? c.accent : c.muted }}>{i + 1}</span>
 
-              <div style={s.thumbWrap} onClick={() => playAt(i)}>
-                <img
-                  src={optimizeUrl(songImage(song, album), 160)}
-                  alt={song.title}
-                  loading="lazy"
-                  style={s.thumb}
-                  onError={(e) => { e.currentTarget.style.visibility = "hidden"; }}
-                />
-                {active && <div style={s.thumbOverlay}><PlayIcon /></div>}
-              </div>
+              <div style={s.trackBody}>
+                <div style={s.trackInfo}>
+                  <div style={{ ...s.trackTitle, fontWeight: active ? 700 : 500 }}>{song.title}</div>
+                  <div style={{ ...s.trackArtist, color: c.muted }}>{song.artist}</div>
+                </div>
 
-              <div style={s.trackInfo} onClick={() => playAt(i)}>
-                <div style={{ ...s.trackTitle, color: active ? "#fff" : c.text, fontWeight: active ? 700 : 500 }}>{song.title}</div>
-                <div style={{ ...s.trackArtist, color: c.muted }}>{song.artist}</div>
-              </div>
-
-              {/* Song time: hidden on mobile */}
-              {!isMobile && (
-                <span style={{ ...s.trackDuration, color: c.muted }}>{fmt(readDuration(song) || durations[i])}</span>
-              )}
-
-              <div style={{ position: "relative" }} ref={open ? menuRef : null}>
-                <button
-                  style={{ ...s.iconBtn, color: open ? c.text : c.muted }}
-                  onClick={(e) => { e.stopPropagation(); setMenuOpenId(open ? null : i); }}
-                  title="More options"
-                >
-                  •••
-                </button>
-                {open && (
-                  <div style={s.popupMenu}>
-                    {menuItems(song).map(([label, icon, fn], k) => (
-                      <React.Fragment key={label}>
-                        {k > 0 && <div style={s.menuDivider} />}
-                        <div style={s.menuItem} onClick={() => { fn(); setMenuOpenId(null); }}>
-                          <span>{label}</span>
-                          <span style={s.menuIcon}>{icon}</span>
-                        </div>
-                      </React.Fragment>
-                    ))}
-                  </div>
+                {/* Song time: hidden on mobile */}
+                {!isMobile && (
+                  <span style={{ ...s.trackDuration, color: c.muted }}>{fmt(readDuration(song) || durations[i])}</span>
                 )}
+
+                <div style={{ position: "relative" }} ref={open ? menuRef : null}>
+                  <button
+                    style={{ ...s.iconBtn, color: open ? c.text : c.muted }}
+                    onClick={(e) => { e.stopPropagation(); setMenuOpenId(open ? null : i); }}
+                    title="More options"
+                  >
+                    <DotsIcon vertical />
+                  </button>
+                  {open && (
+                    <div style={s.popupMenu} onClick={(e) => e.stopPropagation()}>
+                      {menuItems(song).map(([label, icon, fn], k) => (
+                        <React.Fragment key={label}>
+                          {k > 0 && <div style={s.menuDivider} />}
+                          <div style={s.menuItem} onClick={() => { fn(); setMenuOpenId(null); }}>
+                            <span>{label}</span>
+                            <span style={s.menuIcon}>{icon}</span>
+                          </div>
+                        </React.Fragment>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           );
@@ -360,6 +377,7 @@ const AlbumDetails = () => {
 /* ── Styles ───────────────────────────────────────────────────── */
 const flex = { display: "flex", alignItems: "center" };
 const ellipsis = { whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" };
+const line = "rgba(255,255,255,0.14)";
 
 const s = {
   page: {
@@ -397,25 +415,17 @@ const s = {
     border: "none", cursor: "pointer", fontSize: 18, background: "rgba(255,255,255,0.18)",
   },
 
-  tracks: {
-    display: "flex", flexDirection: "column", gap: 4, borderTop: "1px solid rgba(255,255,255,0.12)",
-    padding: "16px 12px 120px", maxWidth: 1000, margin: "0 auto", boxSizing: "border-box",
-  },
-  track: { ...flex, gap: 14, padding: "8px 12px", borderRadius: 10, transition: "background 0.15s", position: "relative" },
-  trackNum: { width: 22, textAlign: "center", fontSize: 14, fontVariantNumeric: "tabular-nums", flexShrink: 0 },
-  // Bigger song image (was 48)
-  thumbWrap: {
-    position: "relative", width: 64, height: 64, borderRadius: 8, overflow: "hidden", flexShrink: 0,
-    background: "rgba(255,255,255,0.1)", cursor: "pointer", boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
-  },
-  thumb: { width: "100%", height: "100%", objectFit: "cover", display: "block" },
-  thumbOverlay: { ...flex, justifyContent: "center", position: "absolute", inset: 0, background: "rgba(0,0,0,0.45)", color: "#fff" },
-  // Wider name/artist area: takes all free space now that the star is gone
-  trackInfo: { flex: 1, minWidth: 0, width: "100%", cursor: "pointer" },
-  trackTitle: { fontSize: 16, ...ellipsis },
-  trackArtist: { fontSize: 14, marginTop: 3, ...ellipsis },
+  // Tracklist (Apple Music style: no images, thin dividers that start under the title)
+  tracks: { paddingBottom: 120, maxWidth: 1000, margin: "0 auto", boxSizing: "border-box" },
+  divider: { height: 1, margin: "0 20px", background: line },
+  track: { ...flex, cursor: "pointer", position: "relative", transition: "background 0.15s" },
+  trackNum: { width: 52, paddingLeft: 8, boxSizing: "border-box", textAlign: "center", fontSize: 17, fontVariantNumeric: "tabular-nums", flexShrink: 0 },
+  trackBody: { ...flex, flex: 1, minWidth: 0, gap: 8, padding: "9px 0", marginRight: 20, borderBottom: `1px solid ${line}` },
+  trackInfo: { flex: 1, minWidth: 0 },
+  trackTitle: { fontSize: 17, lineHeight: 1.25, ...ellipsis },
+  trackArtist: { fontSize: 15, lineHeight: 1.25, marginTop: 2, ...ellipsis },
   trackDuration: { width: 44, textAlign: "right", fontSize: 13, fontVariantNumeric: "tabular-nums", flexShrink: 0 },
-  iconBtn: { background: "transparent", border: "none", cursor: "pointer", fontSize: 16, padding: "6px 8px", flexShrink: 0 },
+  iconBtn: { ...flex, background: "transparent", border: "none", cursor: "pointer", padding: "6px 8px", flexShrink: 0 },
   popupMenu: {
     position: "absolute", top: "100%", right: 0, minWidth: 210, background: "#2c2c2e",
     borderRadius: 12, padding: "4px 0", boxShadow: "0 12px 32px rgba(0,0,0,0.5)", zIndex: 200,
