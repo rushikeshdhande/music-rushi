@@ -8,6 +8,52 @@ const fmt = (s) => {
   return `${m}:${sec}`;
 };
 
+/* ── Apple Music style icons (filled, rounded; colour = currentColor) ── */
+const Ti = ({ children }) => (
+  <svg className="ti" viewBox="0 0 24 24">{children}</svg>
+);
+const ROUND = { stroke: "currentColor", strokeWidth: 2, strokeLinejoin: "round" };
+const LINE = { fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" };
+
+const Icons = {
+  Play: () => (
+    <Ti><path d="M8 5.14v13.72a1 1 0 0 0 1.52.85l11.1-6.86a1 1 0 0 0 0-1.7L9.52 4.29A1 1 0 0 0 8 5.14z" /></Ti>
+  ),
+  Pause: () => (
+    <Ti><rect x="5.5" y="4.5" width="4.6" height="15" rx="1.4" /><rect x="13.9" y="4.5" width="4.6" height="15" rx="1.4" /></Ti>
+  ),
+  Next: () => (<Ti><path d="M3.5 6.5v11l8-5.5zM12.5 6.5v11l8-5.5z" {...ROUND} /></Ti>),
+  Prev: () => (<Ti><path d="M20.5 6.5v11l-8-5.5zM11.5 6.5v11l-8-5.5z" {...ROUND} /></Ti>),
+  VolLow: () => (<Ti><path d="M11 5 6 9H2v6h4l5 4z" /></Ti>),
+  VolHigh: () => (
+    <Ti><path d="M11 5 6 9H2v6h4l5 4z" /><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14" {...LINE} /></Ti>
+  ),
+  Queue: () => (
+    <Ti>
+      <circle cx="4" cy="6" r="1.6" /><circle cx="4" cy="12" r="1.6" /><circle cx="4" cy="18" r="1.6" />
+      <path d="M9 6h12M9 12h12M9 18h12" {...LINE} />
+    </Ti>
+  ),
+  Note: () => (
+    <Ti>
+      <circle cx="7" cy="18" r="3.2" /><circle cx="18" cy="16" r="3.2" />
+      <rect x="8.2" y="5" width="2" height="13" /><rect x="19.2" y="3" width="2" height="13" />
+      <path d="M8.2 5.5 21.2 3v4.2L8.2 9.7z" />
+    </Ti>
+  ),
+};
+
+const PlayBtn = ({ playing, ...p }) => (
+  <button className="play-btn" aria-label={playing ? "Pause" : "Play"} {...p}>
+    {playing ? <Icons.Pause /> : <Icons.Play />}
+  </button>
+);
+const SkipBtn = ({ dir, ...p }) => (
+  <button className="icon-btn" aria-label={dir === "prev" ? "Previous" : "Next"} {...p}>
+    {dir === "prev" ? <Icons.Prev /> : <Icons.Next />}
+  </button>
+);
+
 export default function Player() {
   const { current, playing, currentTime, duration, playPause, next, prev, seek } = usePlayer();
   const [expanded, setExpanded] = useState(false);
@@ -29,14 +75,14 @@ export default function Player() {
   }, [expanded]);
 
   const hasTrack = !!current;
+  const off = !hasTrack;
   const progress = hasTrack ? Math.min(100, Math.max(0, (currentTime / (duration || 1)) * 100)) : 0;
-  
   const remainingTime = duration ? `-${fmt(Math.max(0, duration - currentTime))}` : "-0:00";
 
   return (
     <>
       <style>{`
-        /* ================= MINI PLAYER (UNTOUCHED) ================= */
+        /* ================= MINI PLAYER ================= */
         .player-mini {
           position: fixed; bottom: 20px;
           left: calc(50% + (var(--sidebar-width, 0px) / 2));
@@ -59,18 +105,21 @@ export default function Player() {
         .player-mini.idle { grid-template-columns: 1fr auto 1fr; }
         .player-mini.active { grid-template-columns: auto 1fr; }
 
+        /* Buttons + Apple-style icons */
         .icon-btn, .play-btn {
-          background: none; border: none; padding: 0; cursor: pointer;
+          background: none; border: none; padding: 0; cursor: pointer; color: inherit;
           display: inline-flex; align-items: center; justify-content: center;
           transition: opacity 0.15s, transform 0.15s;
         }
         .icon-btn:hover, .icon-btn:hover .idle-svg { opacity: 1; transform: scale(1.08); }
         .play-btn:hover { transform: scale(1.08); }
-        
-        .icon-btn img { width: 22px; height: 22px; filter: brightness(0) invert(1); opacity: 0.8; } 
+        .icon-btn:disabled, .play-btn:disabled { opacity: 0.4; cursor: default; }
+
+        .ti { width: 28px; height: 28px; fill: currentColor; }
+        .icon-btn .ti { opacity: 0.85; }
+        .play-btn .ti { width: 34px; height: 34px; }
         .idle-svg { width: 22px; height: 22px; filter: brightness(0) invert(1); opacity: 0.8; }
-        .play-btn img { width: 32px; height: 32px; }
-        
+
         .mini-controls { display: flex; align-items: center; gap: 8px; }
         .idle-extras { display: none; }
         .player-mini.idle .idle-extras { display: inline-flex; }
@@ -96,63 +145,58 @@ export default function Player() {
         .progress-fill { position: absolute; top: 0; left: 0; height: 100%; background: #fff; border-radius: 999px; pointer-events: none; }
         .progress-container input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 
-        /* ================= FULL-SCREEN PLAYER (REDUCED SIZES) ================= */
-        .player-full { 
-          position: fixed; inset: 0; z-index: 2000; 
-          display: flex; flex-direction: column; 
-          overflow: hidden; color: #fff; 
-          opacity: 0; visibility: hidden; transform: translateY(40px); 
-          transition: all 0.32s ease; 
+        /* ================= FULL-SCREEN PLAYER ================= */
+        .player-full {
+          position: fixed; inset: 0; z-index: 2000;
+          display: flex; flex-direction: column;
+          overflow: hidden; color: #fff;
+          opacity: 0; visibility: hidden; transform: translateY(40px);
+          transition: all 0.32s ease;
           font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
         .player-full.open { opacity: 1; visibility: visible; transform: translateY(0); }
-        
+
         .player-full-bg { position: absolute; inset: -40px; background-size: cover; background-position: center; filter: blur(80px) brightness(0.4); transform: scale(1.2); z-index: -2; }
         .player-full-overlay { position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(0,0,0,0.1), rgba(0,0,0,0.7)); }
 
-        /* Reduced header padding */
         .full-header { display: flex; justify-content: center; align-items: center; padding: 16px; position: relative; }
         .full-close { background: rgba(255,255,255,0.15); border: none; color: #fff; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
         .full-close svg { width: 18px; height: 18px; }
 
-        /* Reduced body padding */
         .full-body { flex: 1; display: flex; flex-direction: column; padding: 0 20px 24px 20px; width: 100%; max-width: 420px; margin: 0 auto; justify-content: center; }
-        
-        /* Smaller Artwork */
+
         .full-art-wrapper { width: 100%; max-width: 300px; aspect-ratio: 1; border-radius: 12px; overflow: hidden; margin: 0 auto 20px auto; box-shadow: 0 16px 40px rgba(0,0,0,0.5); }
         .full-art { width: 100%; height: 100%; object-fit: cover; }
-        
-        /* Smaller Text */
+
         .full-info { width: 100%; text-align: left; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-end; }
         .full-text-content { flex: 1; min-width: 0; padding-right: 12px; }
         .full-title { font-size: 20px; font-weight: 700; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.3px; }
         .full-artist { font-size: 15px; color: rgba(255,255,255,0.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        
+
         .full-actions { display: flex; gap: 12px; align-items: center; padding-bottom: 2px; }
         .full-actions button { background: none; border: none; color: #fff; opacity: 0.7; cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center; }
         .full-actions svg { width: 20px; height: 20px; }
 
-        /* Progress */
         .full-progress-area { width: 100%; margin-bottom: 24px; }
         .full-progress-bar { position: relative; width: 100%; height: 5px; background: rgba(255,255,255,0.2); border-radius: 999px; cursor: pointer; }
         .full-progress-fill { position: absolute; top: 0; left: 0; height: 100%; background: rgba(255,255,255,0.8); border-radius: 999px; pointer-events: none; }
         .full-progress-bar input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
         .full-time-labels { display: flex; justify-content: space-between; margin-top: 8px; font-size: 12px; color: rgba(255,255,255,0.5); font-variant-numeric: tabular-nums; }
 
-        /* Smaller Controls */
+        /* Big Apple-style transport icons */
         .full-controls { display: flex; align-items: center; justify-content: space-between; padding: 0 12px; margin-bottom: 24px; }
-        .full-controls .icon-btn img { width: 40px; height: 40px; filter: brightness(0) invert(1); opacity: 0.9; }
-        .full-controls .play-btn img { width: 60px; height: 60px; }
+        .full-controls .ti { width: 48px; height: 48px; }
+        .full-controls .icon-btn .ti { opacity: 0.9; }
+        .full-controls .play-btn .ti { width: 60px; height: 60px; }
 
-        /* Smaller Volume */
+        /* Volume: speaker (low) · bar · speaker (high) */
         .full-bottom { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 4px; margin-bottom: 16px; }
-        .full-bottom svg { width: 14px; height: 14px; fill: rgba(255,255,255,0.5); }
+        .full-bottom .ti { width: 22px; height: 22px; opacity: 0.55; flex-shrink: 0; }
         .full-volume-bar { flex: 1; height: 5px; background: rgba(255,255,255,0.2); border-radius: 999px; position: relative; }
         .full-volume-fill { position: absolute; top: 0; left: 0; height: 100%; background: rgba(255,255,255,0.8); border-radius: 999px; width: 50%; }
-        
-        /* Smaller Queue Icon */
+
         .full-queue { display: flex; justify-content: center; padding-bottom: 8px; }
-        .full-queue svg { width: 22px; height: 22px; fill: rgba(255,255,255,0.6); }
+        .full-queue .ti { width: 26px; height: 26px; opacity: 0.6; }
 
         /* ================= MOBILE (MINI PLAYER ONLY) ================= */
         @media (max-width: 640px) {
@@ -193,8 +237,8 @@ export default function Player() {
             justify-self: end;
             flex-shrink: 0;
           }
-          .mobile-controls .play-btn img { width: 32px; height: 32px; }
-          .mobile-controls .icon-btn img { width: 22px; height: 22px; }
+          .mobile-controls .ti { width: 30px; height: 30px; }
+          .mobile-controls .play-btn .ti { width: 32px; height: 32px; }
         }
 
         @media (min-width: 641px) {
@@ -205,20 +249,14 @@ export default function Player() {
 
       {/* ============ MINI PLAYER ============ */}
       <div className={`player-mini ${expanded ? "hidden" : ""} ${hasTrack ? "active" : "idle"}`}>
-        
+
         <div className="mini-controls">
           <button className="icon-btn idle-extras">
             <svg className="idle-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
           </button>
-          <button className="icon-btn" onClick={prev} disabled={!hasTrack}>
-            <img src="/fastbackwardicon.png" alt="Prev" />
-          </button>
-          <button className="play-btn" onClick={playPause} disabled={!hasTrack}>
-            <img src={playing ? "/pause_icon_transparent.png" : "/playicon.png"} alt="Play" />
-          </button>
-          <button className="icon-btn" onClick={next} disabled={!hasTrack}>
-            <img src="/fastforwardicon.png" alt="Next" />
-          </button>
+          <SkipBtn dir="prev" onClick={prev} disabled={off} />
+          <PlayBtn playing={playing} onClick={playPause} disabled={off} />
+          <SkipBtn dir="next" onClick={next} disabled={off} />
           <button className="icon-btn idle-extras">
             <svg className="idle-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 1l4 4-4 4M3 11V9a4 4 0 014-4h14M7 23l-4-4 4-4M21 13v2a4 4 0 01-4 4H3"/></svg>
           </button>
@@ -242,26 +280,17 @@ export default function Player() {
           </div>
         ) : (
           <>
-            <div className="idle-logo">
-              <svg viewBox="0 0 24 24"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
-            </div>
+            <div className="idle-logo"><Icons.Note /></div>
             <div className="idle-speaker">
               <svg className="idle-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 5L6 9H2v6h4l5 4V5zM15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14"/></svg>
             </div>
-
-            <div className="idle-art-mobile">
-              <svg viewBox="0 0 24 24"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
-            </div>
+            <div className="idle-art-mobile"><Icons.Note /></div>
           </>
         )}
 
         <div className="mobile-controls">
-          <button className="play-btn" onClick={playPause} disabled={!hasTrack}>
-            <img src={playing ? "/pause_icon_transparent.png" : "/playicon.png"} alt="Play" />
-          </button>
-          <button className="icon-btn" onClick={next} disabled={!hasTrack}>
-            <img src="/fastforwardicon.png" alt="Next" />
-          </button>
+          <PlayBtn playing={playing} onClick={playPause} disabled={off} />
+          <SkipBtn dir="next" onClick={next} disabled={off} />
         </div>
       </div>
 
@@ -270,7 +299,7 @@ export default function Player() {
         <div className={`player-full ${expanded ? "open" : ""}`}>
           <div className="player-full-bg" style={{ backgroundImage: `url(${current.artwork})` }} />
           <div className="player-full-overlay" />
-          
+
           <div className="full-header">
             <button className="full-close" onClick={() => setExpanded(false)}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
@@ -283,7 +312,7 @@ export default function Player() {
             <div className="full-art-wrapper">
               <img src={current.artwork} alt="Art" className="full-art" />
             </div>
-            
+
             <div className="full-info">
               <div className="full-text-content">
                 <div className="full-title">{current.title}</div>
@@ -304,7 +333,7 @@ export default function Player() {
                 </button>
               </div>
             </div>
-            
+
             <div className="full-progress-area">
               <div className="full-progress-bar">
                 <div className="full-progress-fill" style={{ width: `${progress}%` }} />
@@ -317,32 +346,18 @@ export default function Player() {
             </div>
 
             <div className="full-controls">
-              <button className="icon-btn" onClick={prev}>
-                <img src="/fastbackwardicon.png" alt="Prev" />
-              </button>
-              <button className="play-btn" onClick={playPause}>
-                <img src={playing ? "/pause_icon_transparent.png" : "/playicon.png"} alt="Play" />
-              </button>
-              <button className="icon-btn" onClick={next}>
-                <img src="/fastforwardicon.png" alt="Next" />
-              </button>
+              <SkipBtn dir="prev" onClick={prev} />
+              <PlayBtn playing={playing} onClick={playPause} />
+              <SkipBtn dir="next" onClick={next} />
             </div>
 
             <div className="full-bottom">
-              <svg viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/></svg>
-              <div className="full-volume-bar">
-                <div className="full-volume-fill"></div>
-              </div>
-              <svg viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5zM15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14"/></svg>
+              <Icons.VolLow />
+              <div className="full-volume-bar"><div className="full-volume-fill" /></div>
+              <Icons.VolHigh />
             </div>
-            
-            <div className="full-queue">
-              <svg viewBox="0 0 24 24">
-                <path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h10v2H4z"/>
-                <circle cx="18" cy="18" r="2"/>
-                <path d="M19 14v4"/>
-              </svg>
-            </div>
+
+            <div className="full-queue"><Icons.Queue /></div>
           </div>
         </div>
       )}
