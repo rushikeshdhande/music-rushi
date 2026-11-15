@@ -37,7 +37,7 @@ function extractAlbumColor(url) {
         for (let i = 0; i < data.length; i += 4) {
           const R = data[i], G = data[i + 1], B = data[i + 2];
           const lum = (R * 299 + G * 587 + B * 114) / 1000;
-          if (data[i + 3] < 128 || lum > 238 || lum < 18) continue; // skip transparent / near white / near black
+          if (data[i + 3] < 128 || lum > 238 || lum < 18) continue; 
           const max = Math.max(R, G, B);
           const key = ((R >> 4) << 8) | ((G >> 4) << 4) | (B >> 4);
           const e = buckets.get(key) || { r: 0, g: 0, b: 0, n: 0, sat: 0 };
@@ -173,7 +173,7 @@ const AlbumDetails = () => {
     if (isSameSong(album.songs[activeIndex], current)) return;
     const idx = album.songs.findIndex((sg) => isSameSong(sg, current));
     setActiveIndex(idx >= 0 ? idx : null);
-  }, [current]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [current]); 
 
   // Real song lengths from audio metadata
   useEffect(() => {
@@ -291,11 +291,9 @@ const AlbumDetails = () => {
           onError={(e) => { e.currentTarget.style.background = "#1c1c1e"; }}
         />
         <div style={mx("heroInfo")}>
+          {/* Reduced text sizes */}
           <h1 style={{ ...s.title, color: c.text }}>{album.name}</h1>
           <p style={{ ...s.artist, color: c.text }}>{album.artist}</p>
-          <p style={{ ...s.meta, color: c.muted }}>
-            Bollywood • 2023{!isMobile && ` • ${album.songs.length} songs`}
-          </p>
           <div style={mx("actionsRow")}>
             <button style={s.playBtn} onClick={() => playAt(0)}>
               <PlayIcon style={{ marginRight: 8 }} />Preview
@@ -394,27 +392,29 @@ const s = {
     boxShadow: "0 24px 60px rgba(0,0,0,0.4)", flexShrink: 0,
   },
   heroInfo: { flex: "1 1 300px", minWidth: 240, paddingBottom: 4, display: "flex", flexDirection: "column", gap: 6 },
-  title: { fontSize: 32, fontWeight: 700, letterSpacing: -0.5, lineHeight: 1.15, margin: 0, wordBreak: "break-word", overflowWrap: "anywhere" },
-  artist: { fontSize: 20, fontWeight: 500, margin: 0 },
-  meta: { fontSize: 14, margin: "0 0 18px", opacity: 0.85 },
+  
+  /* TEXT SIZES REDUCED HERE */
+  title: { fontSize: 24, fontWeight: 700, letterSpacing: -0.3, lineHeight: 1.2, margin: 0, wordBreak: "break-word", overflowWrap: "anywhere" },
+  artist: { fontSize: 16, fontWeight: 500, margin: "2px 0 16px", opacity: 0.85 },
+  
   actionsRow: { ...flex, gap: 14, flexWrap: "wrap" },
   playBtn: {
-    ...flex, fontSize: 16, fontWeight: 600, padding: "12px 28px", borderRadius: 24,
+    ...flex, fontSize: 15, fontWeight: 600, padding: "10px 24px", borderRadius: 24,
     border: "none", cursor: "pointer", background: "#ffffff", color: "#111111",
   },
   shareCircleBtn: {
-    ...flex, justifyContent: "center", width: 44, height: 44, borderRadius: "50%",
+    ...flex, justifyContent: "center", width: 42, height: 42, borderRadius: "50%",
     border: "none", cursor: "pointer", fontSize: 18, background: "rgba(255,255,255,0.18)",
   },
 
   tracks: { paddingBottom: 120, maxWidth: 1000, margin: "0 auto", boxSizing: "border-box" },
   divider: { height: 1, margin: "0 20px", background: line },
   track: { ...flex, cursor: "pointer", position: "relative", transition: "background 0.15s" },
-  trackNum: { width: 52, paddingLeft: 8, boxSizing: "border-box", textAlign: "center", fontSize: 17, fontVariantNumeric: "tabular-nums", flexShrink: 0 },
+  trackNum: { width: 52, paddingLeft: 8, boxSizing: "border-box", textAlign: "center", fontSize: 16, fontVariantNumeric: "tabular-nums", flexShrink: 0 },
   trackBody: { ...flex, flex: 1, minWidth: 0, gap: 8, padding: "9px 0", marginRight: 20, borderBottom: `1px solid ${line}` },
   trackInfo: { flex: 1, minWidth: 0 },
-  trackTitle: { fontSize: 17, lineHeight: 1.25, ...ellipsis },
-  trackArtist: { fontSize: 15, lineHeight: 1.25, marginTop: 2, ...ellipsis },
+  trackTitle: { fontSize: 16, lineHeight: 1.25, ...ellipsis },
+  trackArtist: { fontSize: 14, lineHeight: 1.25, marginTop: 2, ...ellipsis },
   trackDuration: { width: 44, textAlign: "right", fontSize: 13, fontVariantNumeric: "tabular-nums", flexShrink: 0 },
   iconBtn: { ...flex, background: "transparent", border: "none", cursor: "pointer", padding: "6px 8px", flexShrink: 0 },
   popupMenu: {
@@ -436,7 +436,7 @@ const m = {
     background: "rgba(255,255,255,0.14)", border: "0.5px solid rgba(255,255,255,0.35)",
   },
   pillBtn: { ...flex, justifyContent: "center", width: 40, height: 36, padding: 0, border: "none", background: "transparent", color: "#fff", cursor: "pointer" },
-  hero: { flexDirection: "column", flexWrap: "nowrap", alignItems: "center", textAlign: "center", gap: 20, padding: "64px 20px 24px" },
+  hero: { flexDirection: "column", flexWrap: "nowrap", alignItems: "center", textAlign: "center", gap: 16, padding: "56px 20px 24px" },
   heroArt: { width: "min(240px, 70vw)" },
   heroInfo: { flex: "0 0 auto", minWidth: 0, width: "100%", alignItems: "center", textAlign: "center" },
   actionsRow: { justifyContent: "center", width: "100%" },
