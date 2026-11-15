@@ -1,9 +1,31 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { usePlayer } from "../contexts/PlayerContext";
 
 const fmt = (s) => {
   if (!isFinite(s) || s < 0) return "0:00";
   return `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, "0")}`;
+};
+
+// Helper to extract the dominant color from the image
+const useDominantColor = (imgUrl) => {
+  const [color, setColor] = useState("rgba(30, 30, 34, 0.8)");
+  useEffect(() => {
+    if (!imgUrl) return;
+    const img = new Image();
+    img.crossOrigin = "Anonymous";
+    img.src = imgUrl;
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      canvas.width = 1;
+      canvas.height = 1;
+      ctx.drawImage(img, 0, 0, 1, 1);
+      const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+      // Darken the color slightly so white text pops
+      setColor(`rgba(${Math.floor(r * 0.6)}, ${Math.floor(g * 0.6)}, ${Math.floor(b * 0.6)}, 1)`);
+    };
+  }, [imgUrl]);
+  return color;
 };
 
 const Ti = ({ children }) => <svg className="ti" viewBox="0 0 24 24">{children}</svg>;
@@ -19,6 +41,8 @@ const Icons = {
   VolHigh: () => <Ti><path d="M11 5 6 9H2v6h4l5 4z" /><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14" {...LINE} /></Ti>,
   Queue: () => <Ti><circle cx="4" cy="6" r="1.6" /><circle cx="4" cy="12" r="1.6" /><circle cx="4" cy="18" r="1.6" /><path d="M9 6h12M9 12h12M9 18h12" {...LINE} /></Ti>,
   Note: () => <Ti><circle cx="7" cy="18" r="3.2" /><circle cx="18" cy="16" r="3.2" /><rect x="8.2" y="5" width="2" height="13" /><rect x="19.2" y="3" width="2" height="13" /><path d="M8.2 5.5 21.2 3v4.2L8.2 9.7z" /></Ti>,
+  Star: () => <Ti><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/></Ti>,
+  Dots: () => <Ti><circle cx="5" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="19" cy="12" r="2" fill="currentColor"/></Ti>
 };
 
 const PlayBtn = ({ playing, ...p }) => (
@@ -31,6 +55,7 @@ const SkipBtn = ({ dir, ...p }) => (
 export default function Player() {
   const { current, playing, currentTime, duration, playPause, next, prev, seek } = usePlayer();
   const [expanded, setExpanded] = useState(false);
+  const themeColor = useDominantColor(current?.artwork);
 
   useEffect(() => { if (!current && expanded) setExpanded(false); }, [current, expanded]);
   useEffect(() => {
@@ -82,40 +107,59 @@ export default function Player() {
         .progress-container{position:relative;flex:1;height:3px;background:rgba(255,255,255,.12);border-radius:999px;cursor:pointer}
         .progress-fill{position:absolute;top:0;left:0;height:100%;background:#fff;border-radius:999px;pointer-events:none}
         .progress-container input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
-        .player-full{position:fixed;inset:0;z-index:2000;display:flex;flex-direction:column;overflow:hidden;color:#fff;opacity:0;visibility:hidden;transform:translateY(40px);transition:all .32s ease;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+        
+        /* FULL SCREEN PLAYER (Apple Music Layout) */
+        .player-full{position:fixed;inset:0;z-index:2000;display:flex;flex-direction:column;overflow:hidden;color:#fff;opacity:0;visibility:hidden;transform:translateY(40px);transition:opacity .32s ease, visibility .32s ease, transform .32s ease;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#000}
         .player-full.open{opacity:1;visibility:visible;transform:translateY(0)}
-        .player-full-bg{position:absolute;inset:0;background-size:cover;background-position:center;transform:scale(1.15);filter:blur(2px) saturate(160%);z-index:-3}
-        .player-full-glass{position:absolute;inset:0;z-index:-2;backdrop-filter:blur(60px) saturate(180%);-webkit-backdrop-filter:blur(60px) saturate(180%);background:rgba(10,10,12,.55)}
-        .player-full-overlay{position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(0,0,0,.15),rgba(0,0,0,.35))}
-        .full-header{display:flex;justify-content:center;align-items:center;padding:14px;position:relative}
-        .full-close{background:rgba(255,255,255,.15);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(10px)}
+        
+        /* Radiant color background based on song art */
+        .player-full-bg{position:absolute;inset:0;z-index:-2;background:radial-gradient(ellipse at top, var(--theme-color) 0%, #000 65%);transition:background 0.8s ease;}
+        .player-full-overlay{position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(0,0,0,0.1) 0%,rgba(0,0,0,0.8) 100%)}
+        
+        .full-header{display:flex;justify-content:center;align-items:center;padding:16px;padding-top:max(16px, env(safe-area-inset-top))}
+        .full-close{background:rgba(255,255,255,.15);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
         .full-close svg{width:18px;height:18px}
-        .full-body{flex:1;display:flex;flex-direction:column;padding:0 20px 24px;width:100%;max-width:420px;margin:0 auto;justify-content:center}
-        .full-card{width:100%;padding:20px;border-radius:28px;background:rgba(30,30,34,.35);border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(30px) saturate(160%);-webkit-backdrop-filter:blur(30px) saturate(160%);box-shadow:0 20px 60px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.10);display:flex;flex-direction:column}
-        .full-art-wrapper{width:100%;max-width:280px;aspect-ratio:1;border-radius:14px;overflow:hidden;margin:0 auto 16px;box-shadow:0 16px 40px rgba(0,0,0,.5)}
+        
+        .full-body{flex:1;display:flex;flex-direction:column;padding:0 24px 32px;width:100%;max-width:480px;margin:0 auto;justify-content:center}
+        
+        /* Album Art (Large square) */
+        .full-art-wrapper{width:100%;aspect-ratio:1;border-radius:12px;overflow:hidden;margin:0 auto 32px;box-shadow:0 20px 60px rgba(0,0,0,0.6);background:#27272a}
         .full-art{width:100%;height:100%;object-fit:cover}
-        .full-info{width:100%;text-align:left;margin-bottom:14px;display:flex;justify-content:space-between;align-items:flex-end}
-        .full-text-content{flex:1;min-width:0;padding-right:12px}
-        .full-title{font-size:19px;font-weight:700;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.3px}
-        .full-artist{font-size:14px;color:rgba(255,255,255,.62);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .full-actions{display:flex;gap:12px;align-items:center;padding-bottom:2px}
-        .full-actions button{background:none;border:none;color:#fff;opacity:.7;cursor:pointer;padding:0;display:flex}
-        .full-actions svg{width:20px;height:20px}
-        .full-progress-area{width:100%;margin-bottom:18px}
-        .full-progress-bar{position:relative;width:100%;height:4px;background:rgba(255,255,255,.22);border-radius:999px;cursor:pointer}
-        .full-progress-fill{position:absolute;top:0;left:0;height:100%;background:rgba(255,255,255,.9);border-radius:999px;pointer-events:none}
+        
+        /* Title / Artist Info */
+        .full-info{width:100%;text-align:left;margin-bottom:24px;display:flex;justify-content:space-between;align-items:center}
+        .full-text-content{flex:1;min-width:0;padding-right:16px}
+        .full-title{font-size:22px;font-weight:700;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-0.3px}
+        .full-artist{font-size:16px;color:rgba(255,255,255,.65);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        
+        /* Action Buttons (Star, Dots) */
+        .full-actions{display:flex;gap:16px;align-items:center}
+        .full-actions button{background:rgba(255,255,255,.1);border:none;color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.2s}
+        .full-actions button:hover{background:rgba(255,255,255,.2)}
+        .full-actions svg{width:18px;height:18px;opacity:0.9}
+        
+        /* Progress Bar */
+        .full-progress-area{width:100%;margin-bottom:28px}
+        .full-progress-bar{position:relative;width:100%;height:6px;background:rgba(255,255,255,.2);border-radius:4px;cursor:pointer}
+        .full-progress-fill{position:absolute;top:0;left:0;height:100%;background:rgba(255,255,255,.9);border-radius:4px;pointer-events:none}
         .full-progress-bar input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
-        .full-time-labels{display:flex;justify-content:space-between;margin-top:7px;font-size:11px;color:rgba(255,255,255,.55);font-variant-numeric:tabular-nums}
-        .full-controls{display:flex;align-items:center;justify-content:space-between;padding:0 8px;margin-bottom:18px}
-        .full-controls .ti{width:42px;height:42px}
-        .full-controls .icon-btn .ti{opacity:.9}
-        .full-controls .play-btn .ti{width:54px;height:54px}
-        .full-bottom{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 4px;margin-bottom:12px}
-        .full-bottom .ti{width:20px;height:20px;opacity:.55;flex-shrink:0}
-        .full-volume-bar{flex:1;height:4px;background:rgba(255,255,255,.22);border-radius:999px;position:relative}
-        .full-volume-fill{position:absolute;top:0;left:0;height:100%;background:rgba(255,255,255,.85);border-radius:999px;width:50%}
-        .full-queue{display:flex;justify-content:center;padding-bottom:4px}
-        .full-queue .ti{width:24px;height:24px;opacity:.6}
+        .full-time-labels{display:flex;justify-content:space-between;margin-top:10px;font-size:12px;color:rgba(255,255,255,.55);font-variant-numeric:tabular-nums}
+        
+        /* Controls (Prev, Play, Next) */
+        .full-controls{display:flex;align-items:center;justify-content:space-between;padding:0 16px;margin-bottom:32px}
+        .full-controls .ti{width:48px;height:48px;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.3))}
+        .full-controls .icon-btn .ti{opacity:.95}
+        .full-controls .play-btn .ti{width:64px;height:64px}
+        
+        /* Volume & Queue */
+        .full-bottom{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 8px;margin-bottom:24px}
+        .full-bottom .ti{width:24px;height:24px;opacity:.6;flex-shrink:0}
+        .full-volume-bar{flex:1;height:6px;background:rgba(255,255,255,.2);border-radius:4px;position:relative}
+        .full-volume-fill{position:absolute;top:0;left:0;height:100%;background:rgba(255,255,255,.9);border-radius:4px;width:50%}
+        
+        .full-queue{display:flex;justify-content:center;padding-bottom:max(16px, env(safe-area-inset-bottom))}
+        .full-queue .ti{width:28px;height:28px;opacity:.7}
+        
         @media(max-width:640px){
           .player-mini{left:8px;right:8px;bottom:8px;transform:none;width:auto;height:56px;padding:0 12px;border-radius:28px;gap:10px}
           .player-mini.hidden{transform:translateY(20px)}
@@ -131,9 +175,11 @@ export default function Player() {
           .mobile-controls{display:flex;align-items:center;gap:8px;justify-self:end;flex-shrink:0}
           .mobile-controls .ti{width:28px;height:28px}
           .mobile-controls .play-btn .ti{width:30px;height:30px}
-          .full-body{padding:0 16px 20px}
-          .full-card{padding:16px;border-radius:24px}
-          .full-art-wrapper{max-width:240px}
+          
+          .full-body{padding:0 20px 20px}
+          .full-art-wrapper{margin-bottom:24px}
+          .full-title{font-size:20px}
+          .full-artist{font-size:15px}
         }
         @media(min-width:641px){.mobile-controls{display:none}.idle-art-mobile{display:none!important}}
       `}</style>
@@ -179,8 +225,8 @@ export default function Player() {
 
       {hasTrack && (
         <div className={`player-full ${expanded ? "open" : ""}`}>
-          <div className="player-full-bg" style={{ backgroundImage: `url(${current.artwork})` }} />
-          <div className="player-full-glass" />
+          {/* The background color is injected here via CSS variable */}
+          <div className="player-full-bg" style={{ "--theme-color": themeColor }} />
           <div className="player-full-overlay" />
 
           <div className="full-header">
@@ -190,42 +236,45 @@ export default function Player() {
           </div>
 
           <div className="full-body">
-            <div className="full-card">
-              <div className="full-art-wrapper"><img src={current.artwork} alt="Art" className="full-art" /></div>
-
-              <div className="full-info">
-                <div className="full-text-content">
-                  <div className="full-title">{current.title}</div>
-                  <div className="full-artist">{current.artist}</div>
-                </div>
-                <div className="full-actions">
-                  <button aria-label="Favorite"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg></button>
-                  <button aria-label="More"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
-                </div>
-              </div>
-
-              <div className="full-progress-area">
-                <div className="full-progress-bar">
-                  <div className="full-progress-fill" style={{ width: `${progress}%` }} />
-                  <input type="range" min="0" max={duration || 0} step="0.1" value={currentTime || 0} onChange={(e) => seek(Number(e.target.value))} />
-                </div>
-                <div className="full-time-labels"><span>{fmt(currentTime)}</span><span>{remaining}</span></div>
-              </div>
-
-              <div className="full-controls">
-                <SkipBtn dir="prev" onClick={prev} />
-                <PlayBtn playing={playing} onClick={playPause} />
-                <SkipBtn dir="next" onClick={next} />
-              </div>
-
-              <div className="full-bottom">
-                <Icons.VolLow />
-                <div className="full-volume-bar"><div className="full-volume-fill" /></div>
-                <Icons.VolHigh />
-              </div>
-
-              <div className="full-queue"><Icons.Queue /></div>
+            <div className="full-art-wrapper">
+              <img src={current.artwork} alt="Art" className="full-art" />
             </div>
+
+            <div className="full-info">
+              <div className="full-text-content">
+                <div className="full-title">{current.title}</div>
+                <div className="full-artist">{current.artist}</div>
+              </div>
+              <div className="full-actions">
+                <button aria-label="Favorite"><Icons.Star /></button>
+                <button aria-label="More"><Icons.Dots /></button>
+              </div>
+            </div>
+
+            <div className="full-progress-area">
+              <div className="full-progress-bar">
+                <div className="full-progress-fill" style={{ width: `${progress}%` }} />
+                <input type="range" min="0" max={duration || 0} step="0.1" value={currentTime || 0} onChange={(e) => seek(Number(e.target.value))} />
+              </div>
+              <div className="full-time-labels">
+                <span>{fmt(currentTime)}</span>
+                <span>{remaining}</span>
+              </div>
+            </div>
+
+            <div className="full-controls">
+              <SkipBtn dir="prev" onClick={prev} />
+              <PlayBtn playing={playing} onClick={playPause} />
+              <SkipBtn dir="next" onClick={next} />
+            </div>
+
+            <div className="full-bottom">
+              <Icons.VolLow />
+              <div className="full-volume-bar"><div className="full-volume-fill" /></div>
+              <Icons.VolHigh />
+            </div>
+
+            <div className="full-queue"><Icons.Queue /></div>
           </div>
         </div>
       )}
