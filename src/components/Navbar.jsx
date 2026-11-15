@@ -5,6 +5,7 @@ import { useSyncStore } from "../lib/syncStore";
 
 const APP_URL = "https://rushicdhande.vercel.app/music";
 const HEADER_COLOR = "#35145a";
+const HEADER_HEIGHT = 60;
 
 /* ── Icons ────────────────────────────────────────────────────── */
 const S = ({ size = 18, sw = 2, fill = "none", children }) => (
@@ -64,22 +65,30 @@ export default function Navbar() {
   return (
     <>
       <style>{`
-        /* ============ MOBILE HEADER ============ */
+        /* ============ MOBILE HEADER (solid, always visible) ============ */
         .mobile-header {
           display: none;
-          position: fixed; top: 0; left: 0; right: 0; height: 60px; padding: 0 14px;
+          position: fixed; top: 0; left: 0; right: 0;
+          height: ${HEADER_HEIGHT}px; padding: 0 14px;
           grid-template-columns: 1fr auto 1fr; align-items: center;
           background: ${HEADER_COLOR}; color: #fff;
-          z-index: 1200; transition: background 0.25s ease;
+          z-index: 1300; /* above the sliding panel */
+          box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06);
         }
-        .mobile-header.open { background: transparent; }
-        .header-icon-btn { display: flex; align-items: center; justify-content: flex-start; width: 40px; height: 40px; padding: 0; background: none; border: 0; color: #fff; cursor: pointer; }
+        .header-icon-btn {
+          display: flex; align-items: center; justify-content: flex-start;
+          width: 40px; height: 40px; padding: 0;
+          background: none; border: 0; color: #fff; cursor: pointer;
+        }
         .mobile-header-logo { font-size: 25px; font-weight: 800; letter-spacing: -0.5px; }
         .app-btn {
-          justify-self: end; display: flex; align-items: center; height: 28px; padding: 0 16px;
-          border-radius: 999px; background: #fff; color: ${HEADER_COLOR};
+          justify-self: end; display: flex; align-items: center;
+          height: 28px; padding: 0 16px; border-radius: 999px;
+          background: #fff; color: ${HEADER_COLOR};
           font-size: 16px; font-weight: 700; text-decoration: none;
+          transition: opacity 0.2s ease, transform 0.2s ease;
         }
+        .mobile-header.open .app-btn { opacity: 0; transform: scale(0.9); pointer-events: none; }
 
         /* ============ DESKTOP SIDEBAR ============ */
         .navbar {
@@ -87,7 +96,8 @@ export default function Navbar() {
           display: flex; flex-direction: column;
           background: var(--nav-bg, #18181b); color: var(--text-main, #f5f5f7);
           border-right: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
-          z-index: 1000; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s ease;
+          z-index: 1000;
+          transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s ease;
         }
         .navbar-header { padding: 20px 16px 12px; border-bottom: 1px solid var(--border-color); flex-shrink: 0; }
         .navbar-logo { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
@@ -114,30 +124,33 @@ export default function Navbar() {
           body.on-album-details .navbar { background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
         }
 
-        /* ============ MOBILE: purple frosted glass, 36% opacity, slide from top ============ */
+        /* ============ MOBILE: panel slides DOWN from under header ============ */
         @media (max-width: 768px) {
           .mobile-header { display: grid; }
 
           .navbar {
-            /* No blue: purple-only tint */
-            width: 100%; border: 0; box-shadow: none;
-            transform-origin: top center;
-            transform: translateY(-100%);
-            opacity: 0;
-            visibility: hidden;
-            z-index: 1100;
+            width: 100%;
+            /* sits directly below the fixed header, not over it */
+            top: ${HEADER_HEIGHT}px;
+            bottom: 0;
+            left: 0; right: 0;
+            border: 0; box-shadow: none;
+            z-index: 1200;
 
-            /* 36% transparent purple glass + subtle gradient from header color */
+            /* purple frosted glass, 36% transparent */
             background:
               linear-gradient(180deg, rgba(53, 20, 90, 0.42) 0%, rgba(53, 20, 90, 0.30) 100%);
             backdrop-filter: blur(28px) saturate(1.35);
             -webkit-backdrop-filter: blur(28px) saturate(1.35);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.10);
 
+            /* closed state: pulled up behind the header */
+            transform: translateY(-100%);
+            opacity: 0;
+            visibility: hidden;
             transition:
               transform 0.42s cubic-bezier(0.22, 1, 0.36, 1),
-              opacity 0.32s ease,
-              visibility 0.32s ease;
+              opacity 0.30s ease,
+              visibility 0.30s ease;
           }
           .navbar.navbar-open {
             transform: translateY(0);
@@ -146,8 +159,11 @@ export default function Navbar() {
           }
 
           .navbar-header { display: none; }
-          .navbar-scroll { padding: 72px 16px 0; }
-          .navbar-scroll > .nav-section:first-child { padding-bottom: 20px; margin-bottom: 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.12); }
+          .navbar-scroll { padding: 16px 16px 0; }
+          .navbar-scroll > .nav-section:first-child {
+            padding-bottom: 20px; margin-bottom: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+          }
           .nav-section { gap: 5px; }
 
           .nav-item { height: 43px; padding: 0 8px; gap: 10px; border-radius: 14px; font-size: 21px; font-weight: 400; color: #f2f2f7; }
@@ -155,34 +171,31 @@ export default function Navbar() {
           .nav-item.active { background: rgba(255, 255, 255, 0.14); font-weight: 700; }
           .nav-item-small { height: 38px; font-size: 16px; }
 
-          /* Staggered fade-in for menu items */
+          /* staggered reveal */
           .navbar .nav-item {
             opacity: 0;
             transform: translateY(-8px);
             transition: opacity 0.28s ease, transform 0.28s ease, background 0.15s ease;
           }
-          .navbar.navbar-open .nav-item {
-            opacity: 1;
-            transform: translateY(0);
-          }
-          .navbar.navbar-open .nav-section li:nth-child(1) .nav-item { transition-delay: 0.10s; }
-          .navbar.navbar-open .nav-section li:nth-child(2) .nav-item { transition-delay: 0.14s; }
-          .navbar.navbar-open .nav-section li:nth-child(3) .nav-item { transition-delay: 0.18s; }
-          .navbar.navbar-open .nav-section li:nth-child(4) .nav-item { transition-delay: 0.22s; }
-          .navbar.navbar-open .nav-section li:nth-child(5) .nav-item { transition-delay: 0.26s; }
+          .navbar.navbar-open .nav-item { opacity: 1; transform: translateY(0); }
+          .navbar.navbar-open .nav-section li:nth-child(1) .nav-item { transition-delay: 0.12s; }
+          .navbar.navbar-open .nav-section li:nth-child(2) .nav-item { transition-delay: 0.16s; }
+          .navbar.navbar-open .nav-section li:nth-child(3) .nav-item { transition-delay: 0.20s; }
+          .navbar.navbar-open .nav-section li:nth-child(4) .nav-item { transition-delay: 0.24s; }
+          .navbar.navbar-open .nav-section li:nth-child(5) .nav-item { transition-delay: 0.28s; }
         }
       `}</style>
 
-      {/* ============ MOBILE HEADER ============ */}
+      {/* ============ MOBILE HEADER (solid) ============ */}
       <header className={`mobile-header ${isOpen ? "open" : ""}`}>
         <button className="header-icon-btn" onClick={() => setIsOpen(!isOpen)} aria-label="Toggle menu">
           {isOpen ? <Icons.Close /> : <Icons.Menu />}
         </button>
         <div className="mobile-header-logo">Music</div>
-        {!isOpen && <a className="app-btn" href={APP_URL} target="_blank" rel="noopener noreferrer">App</a>}
+        <a className="app-btn" href={APP_URL} target="_blank" rel="noopener noreferrer">App</a>
       </header>
 
-      {/* ============ SIDEBAR / FULL-SCREEN MENU ============ */}
+      {/* ============ SLIDING PANEL (below header) / DESKTOP SIDEBAR ============ */}
       <aside className={`navbar ${isAlbumDetails ? "navbar-on-album" : ""} ${isOpen ? "navbar-open" : ""}`}>
         <header className="navbar-header">
           <div className="navbar-logo"><Icons.Logo /><span>Music</span></div>
