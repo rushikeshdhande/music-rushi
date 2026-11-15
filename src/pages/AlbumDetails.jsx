@@ -2,7 +2,6 @@ import React, { useEffect, useState, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { findAlbumByNumericId } from "../data/remoteAlbums";
 import { usePlayer } from "../contexts/PlayerContext";
-import { useSyncStore } from "../lib/syncStore";
 import { shareSong, shareAlbum, songShareUrl } from "../lib/shareUrl";
 
 /* ── Helpers ──────────────────────────────────────────────────── */
@@ -162,7 +161,6 @@ const PlayIcon = ({ size = 14, style }) => (
 const AlbumDetails = () => {
   const { id, albumName } = useParams();
   const { loadAndPlay, current } = usePlayer();
-  const { favourites, toggleFavourite } = useSyncStore();
   const isMobile = useIsMobile();
 
   const album = findAlbumByNumericId(id || albumName);
@@ -297,7 +295,6 @@ const AlbumDetails = () => {
         {album.songs.map((song, i) => {
           const active = activeIndex === i;
           const open = menuOpenId === i;
-          const fav = !!favourites[song.id];
           const hover = (bg) => (e) => { if (!active && !open) e.currentTarget.style.background = bg; };
 
           return (
@@ -311,7 +308,7 @@ const AlbumDetails = () => {
 
               <div style={s.thumbWrap} onClick={() => playAt(i)}>
                 <img
-                  src={optimizeUrl(songImage(song, album), 120)}
+                  src={optimizeUrl(songImage(song, album), 160)}
                   alt={song.title}
                   loading="lazy"
                   style={s.thumb}
@@ -324,14 +321,6 @@ const AlbumDetails = () => {
                 <div style={{ ...s.trackTitle, color: active ? "#fff" : c.text, fontWeight: active ? 700 : 500 }}>{song.title}</div>
                 <div style={{ ...s.trackArtist, color: c.muted }}>{song.artist}</div>
               </div>
-
-              <button
-                style={{ ...s.iconBtn, color: fav ? "#f92c47" : c.muted }}
-                onClick={() => toggleFavourite(song.id)}
-                title={fav ? "Unfavourite" : "Favourite"}
-              >
-                {fav ? "★" : "☆"}
-              </button>
 
               {/* Song time: hidden on mobile */}
               {!isMobile && (
@@ -414,15 +403,17 @@ const s = {
   },
   track: { ...flex, gap: 14, padding: "8px 12px", borderRadius: 10, transition: "background 0.15s", position: "relative" },
   trackNum: { width: 22, textAlign: "center", fontSize: 14, fontVariantNumeric: "tabular-nums", flexShrink: 0 },
+  // Bigger song image (was 48)
   thumbWrap: {
-    position: "relative", width: 48, height: 48, borderRadius: 6, overflow: "hidden", flexShrink: 0,
+    position: "relative", width: 64, height: 64, borderRadius: 8, overflow: "hidden", flexShrink: 0,
     background: "rgba(255,255,255,0.1)", cursor: "pointer", boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
   },
   thumb: { width: "100%", height: "100%", objectFit: "cover", display: "block" },
   thumbOverlay: { ...flex, justifyContent: "center", position: "absolute", inset: 0, background: "rgba(0,0,0,0.45)", color: "#fff" },
-  trackInfo: { flex: 1, minWidth: 0, cursor: "pointer" },
-  trackTitle: { fontSize: 15, ...ellipsis },
-  trackArtist: { fontSize: 13, marginTop: 2, ...ellipsis },
+  // Wider name/artist area: takes all free space now that the star is gone
+  trackInfo: { flex: 1, minWidth: 0, width: "100%", cursor: "pointer" },
+  trackTitle: { fontSize: 16, ...ellipsis },
+  trackArtist: { fontSize: 14, marginTop: 3, ...ellipsis },
   trackDuration: { width: 44, textAlign: "right", fontSize: 13, fontVariantNumeric: "tabular-nums", flexShrink: 0 },
   iconBtn: { background: "transparent", border: "none", cursor: "pointer", fontSize: 16, padding: "6px 8px", flexShrink: 0 },
   popupMenu: {
