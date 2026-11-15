@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { usePlayer } from "../contexts/PlayerContext";
 
 const fmt = (s) => {
@@ -22,7 +22,8 @@ const Icons = {
   Note: () => <Ti><circle cx="7" cy="18" r="3.2" /><circle cx="18" cy="16" r="3.2" /><rect x="8.2" y="5" width="2" height="13" /><rect x="19.2" y="3" width="2" height="13" /><path d="M8.2 5.5 21.2 3v4.2L8.2 9.7z" /></Ti>,
   Dots: () => <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>,
   Chevron: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>,
-  Star: () => <Ti><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/></Ti>,
+  Share: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>,
+  Link: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>,
 };
 
 const PlayBtn = ({ playing, ...p }) => (
@@ -35,6 +36,9 @@ const SkipBtn = ({ dir, ...p }) => (
 export default function Player() {
   const { current, playing, currentTime, duration, playPause, next, prev, seek } = usePlayer();
   const [expanded, setExpanded] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [volume, setVolume] = useState(50);
+  const menuRef = useRef(null);
 
   useEffect(() => { if (!current && expanded) setExpanded(false); }, [current, expanded]);
   useEffect(() => {
@@ -48,6 +52,24 @@ export default function Player() {
     return () => window.removeEventListener("keydown", onKey);
   }, [expanded]);
 
+  // Close popup on outside click
+  useEffect(() => {
+    const onDown = (e) => menuRef.current && !menuRef.current.contains(e.target) && setMenuOpen(false);
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, []);
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try { await navigator.share({ title: current.title, text: current.artist }); } catch {}
+    }
+    setMenuOpen(false);
+  };
+  const handleCopy = () => {
+    navigator.clipboard.writeText(window.location.href);
+    setMenuOpen(false);
+  };
+
   const hasTrack = !!current, off = !hasTrack;
   const progress = hasTrack ? Math.min(100, Math.max(0, (currentTime / (duration || 1)) * 100)) : 0;
   const remaining = duration ? `-${fmt(Math.max(0, duration - currentTime))}` : "-0:00";
@@ -59,12 +81,9 @@ export default function Player() {
         .player-mini{
           position:fixed;bottom:18px;left:calc(50% + var(--sidebar-width,0px)/2);transform:translateX(-50%);
           width:calc(100% - var(--sidebar-width,0px) - 48px);max-width:820px;height:64px;padding:0 20px;
-          display:grid;align-items:center;gap:18px;
-          background:#1f1f1f;
-          border:1px solid rgba(255,255,255,0.08);
-          box-shadow:0 12px 40px rgba(0,0,0,.45);
-          border-radius:32px;z-index:1000;color:#f5f5f7;font-family:'Inter',system-ui,sans-serif;
-          transition:all .3s ease;
+          display:grid;align-items:center;gap:18px;background:#1f1f1f;
+          border:1px solid rgba(255,255,255,0.08);box-shadow:0 12px 40px rgba(0,0,0,.45);
+          border-radius:32px;z-index:1000;color:#f5f5f7;font-family:'Inter',system-ui,sans-serif;transition:all .3s ease;
         }
         .player-mini.hidden{opacity:0;pointer-events:none;transform:translateX(-50%) translateY(20px)}
         .player-mini.idle{grid-template-columns:1fr auto 1fr}
@@ -98,38 +117,44 @@ export default function Player() {
         .progress-fill{position:absolute;top:0;left:0;height:100%;background:#fff;border-radius:999px;pointer-events:none}
         .progress-container input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
 
-        /* ================= FULL SCREEN PLAYER (Apple Music Layout) ================= */
+        /* ================= FULL SCREEN PLAYER ================= */
         .player-full{
           position:fixed;inset:0;z-index:2000;display:flex;flex-direction:column;overflow:hidden;color:#fff;
           opacity:0;visibility:hidden;transform:translateY(40px);transition:all .35s ease;
-          font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-          background:#1f1f1f;
+          font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#1f1f1f;
         }
         .player-full.open{opacity:1;visibility:visible;transform:translateY(0)}
 
-        /* Top Header */
-        .full-header{display:flex;justify-content:center;align-items:center;padding:16px;padding-top:max(20px, env(safe-area-inset-top));z-index:10}
-        .full-close{background:rgba(255,255,255,.1);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.2s}
-        .full-close:hover{background:rgba(255,255,255,.2)}
-        .full-close svg{width:18px;height:18px}
+        /* Top Header (Transparent Backgrounds) */
+        .full-header{display:flex;justify-content:space-between;align-items:center;padding:16px;padding-top:max(20px, env(safe-area-inset-top));z-index:10}
+        .full-close, .full-dots-btn {background:transparent;border:none;color:#fff;width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:opacity 0.2s}
+        .full-close:hover, .full-dots-btn:hover {opacity:0.7}
+        .full-close svg{width:22px;height:22px}
+        .full-dots-btn svg{width:24px;height:24px}
+
+        /* Dropdown Menu */
+        .menu-container { position: relative; }
+        .popup-menu { position: absolute; top: 100%; right: 0; margin-top: 8px; background: #2c2c2e; border-radius: 12px; padding: 4px 0; min-width: 180px; box-shadow: 0 12px 32px rgba(0,0,0,0.5); z-index: 100; }
+        .menu-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; font-size: 15px; color: #fff; cursor: pointer; transition: background 0.2s; }
+        .menu-item:hover { background: rgba(255,255,255,0.1); }
 
         /* Centered Container */
         .full-body{flex:1;display:flex;flex-direction:column;padding:0 24px 32px;width:100%;max-width:440px;margin:0 auto;justify-content:center;z-index:10}
         
-        /* Album Art */
-        .full-art-wrapper{width:100%;max-width:320px;aspect-ratio:1;border-radius:12px;overflow:hidden;margin:0 auto 32px;box-shadow:0 24px 60px rgba(0,0,0,0.4);background:#27272a}
+        /* Album Art (Smooth scaling based on play state) */
+        .full-art-wrapper{
+          width:100%;max-width:320px;aspect-ratio:1;border-radius:12px;overflow:hidden;margin:0 auto 32px;
+          box-shadow:0 24px 60px rgba(0,0,0,0.4);background:#27272a;
+          transition: transform 0.4s ease;
+          transform: scale(${playing ? 1 : 0.85});
+        }
         .full-art{width:100%;height:100%;object-fit:cover}
 
-        /* Info Section (Left Align, Right Actions) */
+        /* Info Section */
         .full-info{width:100%;display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:24px}
         .full-text-content{flex:1;min-width:0;padding-right:16px;text-align:left}
         .full-title{font-size:22px;font-weight:700;margin:0 0 4px;line-height:1.2;letter-spacing:-0.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
         .full-artist{font-size:15px;color:rgba(255,255,255,.65);margin:0;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        
-        .full-actions{display:flex;gap:12px;align-items:center;padding-bottom:2px}
-        .full-actions button{background:rgba(255,255,255,.1);border:none;color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.2s}
-        .full-actions button:hover{background:rgba(255,255,255,.2)}
-        .full-actions svg{width:18px;height:18px;opacity:0.9}
 
         /* Progress Area */
         .full-progress-area{width:100%;margin-bottom:32px}
@@ -147,8 +172,10 @@ export default function Player() {
         /* Bottom Section (Volume & Queue) */
         .full-bottom{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 4px;margin-bottom:32px}
         .full-bottom .ti{width:22px;height:22px;opacity:.5;flex-shrink:0}
-        .full-volume-bar{flex:1;height:6px;background:rgba(255,255,255,.2);border-radius:4px;position:relative}
-        .full-volume-fill{position:absolute;top:0;left:0;height:100%;background:rgba(255,255,255,.9);border-radius:4px;width:50%}
+        
+        .full-volume-bar{flex:1;height:6px;background:rgba(255,255,255,.2);border-radius:4px;position:relative;cursor:pointer}
+        .full-volume-fill{position:absolute;top:0;left:0;height:100%;background:rgba(255,255,255,.9);border-radius:4px;pointer-events:none}
+        .full-volume-bar input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
         
         .full-queue{display:flex;justify-content:center;padding-bottom:max(16px, env(safe-area-inset-bottom))}
         .full-queue .ti{width:26px;height:26px;opacity:.6}
@@ -224,6 +251,22 @@ export default function Player() {
             <button className="full-close" onClick={() => setExpanded(false)} aria-label="Close">
               <Icons.Chevron />
             </button>
+            
+            <div className="menu-container" ref={menuRef}>
+              <button className="full-dots-btn" onClick={() => setMenuOpen(!menuOpen)} aria-label="More">
+                <Icons.Dots />
+              </button>
+              {menuOpen && (
+                <div className="popup-menu">
+                  <div className="menu-item" onClick={handleShare}>
+                    <Icons.Share /> Share Song
+                  </div>
+                  <div className="menu-item" onClick={handleCopy}>
+                    <Icons.Link /> Copy Link
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="full-body">
@@ -235,10 +278,6 @@ export default function Player() {
               <div className="full-text-content">
                 <div className="full-title">{current.title}</div>
                 <div className="full-artist">{current.artist}</div>
-              </div>
-              <div className="full-actions">
-                <button aria-label="Favorite"><Icons.Star /></button>
-                <button aria-label="More"><Icons.Dots /></button>
               </div>
             </div>
 
@@ -261,7 +300,10 @@ export default function Player() {
 
             <div className="full-bottom">
               <Icons.VolLow />
-              <div className="full-volume-bar"><div className="full-volume-fill" /></div>
+              <div className="full-volume-bar">
+                <div className="full-volume-fill" style={{ width: `${volume}%` }} />
+                <input type="range" min="0" max="100" value={volume} onChange={(e) => setVolume(Number(e.target.value))} />
+              </div>
               <Icons.VolHigh />
             </div>
 
