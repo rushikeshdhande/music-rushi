@@ -111,15 +111,17 @@ export default function Navbar() {
         .nav-item-small { font-size: 13px; padding: 6px 12px; }
         .nav-art-placeholder { width: 20px; height: 20px; border-radius: 4px; background: var(--hover-bg, rgba(255, 255, 255, 0.08)); flex-shrink: 0; }
 
-        body.on-album-details .navbar { background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+        @media (min-width: 769px) {
+          body.on-album-details .navbar { background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+        }
 
         /* ============ MOBILE: full-screen frosted menu ============ */
         @media (max-width: 768px) {
           .mobile-header { display: grid; }
 
-          .navbar, body.on-album-details .navbar {
+          .navbar {
             width: 100%; border: 0; box-shadow: none; transform: none; z-index: 1100;
-            background: linear-gradient(rgba(53, 20, 90, 0.95) 0, rgba(53, 20, 90, 0.6) 150px, rgba(30, 22, 58, 0.5) 100%);
+            background: linear-gradient(var(--album-navbar, #35145a) 0, transparent 170px), rgba(20, 14, 32, 0.55);
             backdrop-filter: blur(40px) saturate(1.4); -webkit-backdrop-filter: blur(40px) saturate(1.4);
             opacity: 0; visibility: hidden; transition: opacity 0.25s ease, visibility 0.25s;
           }
