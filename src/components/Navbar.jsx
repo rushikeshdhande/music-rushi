@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useSyncStore } from "../lib/syncStore";
 
-const APP_URL = "#"; // ← put your app / store link here (the white "App" pill)
+const APP_URL = "https://rushicdhande.vercel.app/music"; // the white "App" pill
+const HEADER_COLOR = "#35145a"; // header bar colour (separate from the page background)
 
 /* ── Icons ────────────────────────────────────────────────────── */
 const S = ({ size = 18, sw = 2, fill = "none", children }) => (
@@ -70,7 +71,7 @@ export default function Navbar() {
           display: none;
           position: fixed; top: 0; left: 0; right: 0; height: 60px; padding: 0 14px;
           grid-template-columns: 1fr auto 1fr; align-items: center;
-          background: var(--album-navbar, #35145a); color: #fff;
+          background: ${HEADER_COLOR}; color: #fff;
           z-index: 1200; transition: background 0.25s ease;
         }
         .mobile-header.open { background: transparent; }
@@ -78,7 +79,7 @@ export default function Navbar() {
         .mobile-header-logo { font-size: 25px; font-weight: 800; letter-spacing: -0.5px; }
         .app-btn {
           justify-self: end; display: flex; align-items: center; height: 28px; padding: 0 16px;
-          border-radius: 999px; background: #fff; color: var(--album-navbar, #35145a);
+          border-radius: 999px; background: #fff; color: ${HEADER_COLOR};
           font-size: 16px; font-weight: 700; text-decoration: none;
         }
 
@@ -121,7 +122,7 @@ export default function Navbar() {
 
           .navbar {
             width: 100%; border: 0; box-shadow: none; transform: none; z-index: 1100;
-            background: linear-gradient(var(--album-navbar, #35145a) 0, transparent 170px), rgba(20, 14, 32, 0.55);
+            background: linear-gradient(${HEADER_COLOR} 0, transparent 170px), rgba(20, 14, 32, 0.55);
             backdrop-filter: blur(40px) saturate(1.4); -webkit-backdrop-filter: blur(40px) saturate(1.4);
             opacity: 0; visibility: hidden; transition: opacity 0.25s ease, visibility 0.25s;
           }
@@ -145,7 +146,7 @@ export default function Navbar() {
           {isOpen ? <Icons.Close /> : <Icons.Menu />}
         </button>
         <div className="mobile-header-logo">Music</div>
-        {!isOpen && <a className="app-btn" href={APP_URL}>App</a>}
+        {!isOpen && <a className="app-btn" href={APP_URL} target="_blank" rel="noopener noreferrer">App</a>}
       </header>
 
       {/* ============ SIDEBAR (desktop) / FULL-SCREEN MENU (mobile) ============ */}
