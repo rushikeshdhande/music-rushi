@@ -22,10 +22,10 @@ export default function SharedAlbum() {
     if (!album) return;
     const isMobile = /android|iphone|ipad/i.test(navigator.userAgent);
     if (!isMobile) return;
-    const androidIntent =
-      `intent://music-rushi.vercel.app/in/album/${slug}/${id}` +
-      `#Intent;scheme=https;package=${APP_PACKAGE};` +
-      `S.browser_fallback_url=${encodeURIComponent(window.location.href)};end`;
+   const androidIntent =
+  `intent://music-rushi.vercel.app/in/album/${slug}/${id}` +
+  `#Intent;scheme=https;package=${APP_PACKAGE};` +
+  `S.browser_fallback_url=${encodeURIComponent(window.location.href)};end`;
     const t = setTimeout(() => {
       try {
         window.location.href = androidIntent;

@@ -1,321 +1,589 @@
-import { useState, useEffect, useRef } from "react";
+﻿// src/components/Player.jsx
+import { useState, useEffect } from "react";
 import { usePlayer } from "../contexts/PlayerContext";
 
 const fmt = (s) => {
   if (!isFinite(s) || s < 0) return "0:00";
-  return `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, "0")}`;
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60).toString().padStart(2, "0");
+  return `${m}:${sec}`;
 };
 
-/* ── Icons ── */
-const Ti = ({ children }) => <svg className="ti" viewBox="0 0 24 24">{children}</svg>;
-const ROUND = { stroke: "currentColor", strokeWidth: 2, strokeLinejoin: "round" };
-const LINE = { fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" };
-
-const Icons = {
-  Play: () => <Ti><path d="M8 5.14v13.72a1 1 0 0 0 1.52.85l11.1-6.86a1 1 0 0 0 0-1.7L9.52 4.29A1 1 0 0 0 8 5.14z" /></Ti>,
-  Pause: () => <Ti><rect x="5.5" y="4.5" width="4.6" height="15" rx="1.4" /><rect x="13.9" y="4.5" width="4.6" height="15" rx="1.4" /></Ti>,
-  Next: () => <Ti><path d="M3.5 6.5v11l8-5.5zM12.5 6.5v11l8-5.5z" {...ROUND} /></Ti>,
-  Prev: () => <Ti><path d="M20.5 6.5v11l-8-5.5zM11.5 6.5v11l-8-5.5z" {...ROUND} /></Ti>,
-  VolLow: () => <Ti><path d="M11 5 6 9H2v6h4l5 4z" /></Ti>,
-  VolHigh: () => <Ti><path d="M11 5 6 9H2v6h4l5 4z" /><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14" {...LINE} /></Ti>,
-  Queue: () => <Ti><circle cx="4" cy="6" r="1.6" /><circle cx="4" cy="12" r="1.6" /><circle cx="4" cy="18" r="1.6" /><path d="M9 6h12M9 12h12M9 18h12" {...LINE} /></Ti>,
-  Note: () => <Ti><circle cx="7" cy="18" r="3.2" /><circle cx="18" cy="16" r="3.2" /><rect x="8.2" y="5" width="2" height="13" /><rect x="19.2" y="3" width="2" height="13" /><path d="M8.2 5.5 21.2 3v4.2L8.2 9.7z" /></Ti>,
-  Dots: () => <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>,
-  Chevron: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>,
-  Share: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>,
-  Link: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>,
+/* ---------- Mini player icons (Apple Music style) ---------- */
+const I = {
+  Shuffle: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="16 3 21 3 21 8" />
+      <line x1="4" y1="20" x2="21" y2="3" />
+      <polyline points="21 16 21 21 16 21" />
+      <line x1="15" y1="15" x2="21" y2="21" />
+      <line x1="4" y1="4" x2="9" y2="9" />
+    </svg>
+  ),
+  Prev: () => (
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M11 6.5v11a.8.8 0 0 1-1.25.66L2.4 12.66a.8.8 0 0 1 0-1.32l7.35-5.5A.8.8 0 0 1 11 6.5z" />
+      <path d="M21 6.5v11a.8.8 0 0 1-1.25.66l-7.35-5.5a.8.8 0 0 1 0-1.32l7.35-5.5A.8.8 0 0 1 21 6.5z" />
+    </svg>
+  ),
+  Next: () => (
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M13 6.5v11a.8.8 0 0 0 1.25.66l7.35-5.5a.8.8 0 0 0 0-1.32l-7.35-5.5A.8.8 0 0 0 13 6.5z" />
+      <path d="M3 6.5v11a.8.8 0 0 0 1.25.66l7.35-5.5a.8.8 0 0 0 0-1.32l-7.35-5.5A.8.8 0 0 0 3 6.5z" />
+    </svg>
+  ),
+  Play: () => (
+    <svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M7 4.6v14.8a.9.9 0 0 0 1.4.76l11.2-7.4a.9.9 0 0 0 0-1.52L8.4 3.84A.9.9 0 0 0 7 4.6z" />
+    </svg>
+  ),
+  Pause: () => (
+    <svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor">
+      <rect x="5.5" y="4" width="4.5" height="16" rx="1.2" />
+      <rect x="14" y="4" width="4.5" height="16" rx="1.2" />
+    </svg>
+  ),
+  Repeat: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="17 1 21 5 17 9" />
+      <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+      <polyline points="7 23 3 19 7 15" />
+      <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+    </svg>
+  ),
+  Lyrics: () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      <path d="M8.5 8.5h.01M15.5 8.5h.01" strokeWidth="3" />
+      <path d="M8.5 12c1 .8 2.2 1.2 3.5 1.2s2.5-.4 3.5-1.2" />
+    </svg>
+  ),
+  Queue: () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <line x1="9" y1="6" x2="21" y2="6" />
+      <line x1="9" y1="12" x2="21" y2="12" />
+      <line x1="9" y1="18" x2="21" y2="18" />
+      <circle cx="4" cy="6" r="1" fill="currentColor" />
+      <circle cx="4" cy="12" r="1" fill="currentColor" />
+      <circle cx="4" cy="18" r="1" fill="currentColor" />
+    </svg>
+  ),
+  Volume: () => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="3 9 7 9 12 4.5 12 19.5 7 15 3 15" fill="currentColor" />
+      <path d="M15.5 8.5a5 5 0 0 1 0 7" />
+      <path d="M18.5 5.5a9 9 0 0 1 0 13" />
+    </svg>
+  ),
+  Apple: () => (
+    <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701" />
+    </svg>
+  ),
+  NoteArt: () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
+    </svg>
+  ),
 };
 
-const PlayBtn = ({ playing, ...p }) => (
-  <button className="play-btn" aria-label={playing ? "Pause" : "Play"} {...p}>{playing ? <Icons.Pause /> : <Icons.Play />}</button>
-);
-const SkipBtn = ({ dir, ...p }) => (
-  <button className="icon-btn" aria-label={dir === "prev" ? "Previous" : "Next"} {...p}>{dir === "prev" ? <Icons.Prev /> : <Icons.Next />}</button>
-);
+const EMPTY_TRACK = { title: "Not Playing", artist: "Choose a song", artwork: "" };
 
 export default function Player() {
-  const { current, playing, currentTime, duration, playPause, next, prev, seek } = usePlayer();
+  const {
+    current, playing, currentTime, duration, playPause, next, prev, seek,
+    // optional extras — the player works fine if your context doesn't have them
+    shuffle, repeat, toggleShuffle, toggleRepeat,
+    volume, setVolume, toggleLyrics, toggleQueue,
+  } = usePlayer();
   const [expanded, setExpanded] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [volume, setVolume] = useState(50);
-  const menuRef = useRef(null);
 
-  useEffect(() => { if (!current && expanded) setExpanded(false); }, [current, expanded]);
+  const hasTrack = !!current;
+  const track = current || EMPTY_TRACK;
+
+  useEffect(() => {
+    if (!hasTrack) setExpanded(false);
+  }, [hasTrack]);
+
   useEffect(() => {
     document.body.style.overflow = expanded ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
   }, [expanded]);
+
   useEffect(() => {
     if (!expanded) return;
-    const onKey = (e) => e.key === "Escape" && setExpanded(false);
+    const onKey = (e) => { if (e.key === "Escape") setExpanded(false); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [expanded]);
 
-  // Close popup on outside click
-  useEffect(() => {
-    const onDown = (e) => menuRef.current && !menuRef.current.contains(e.target) && setMenuOpen(false);
-    document.addEventListener("mousedown", onDown);
-    return () => document.removeEventListener("mousedown", onDown);
-  }, []);
+  const progress = hasTrack
+    ? Math.min(100, Math.max(0, ((currentTime || 0) / (duration || 1)) * 100))
+    : 0;
 
-  const handleShare = async () => {
-    if (navigator.share) {
-      try { await navigator.share({ title: current.title, text: current.artist }); } catch {}
-    }
-    setMenuOpen(false);
-  };
-  const handleCopy = () => {
-    navigator.clipboard.writeText(window.location.href);
-    setMenuOpen(false);
+  const toggleExpanded = () => {
+    if (hasTrack) setExpanded((v) => !v);
   };
 
-  const hasTrack = !!current, off = !hasTrack;
-  const progress = hasTrack ? Math.min(100, Math.max(0, (currentTime / (duration || 1)) * 100)) : 0;
-  const remaining = duration ? `-${fmt(Math.max(0, duration - currentTime))}` : "-0:00";
+  const call = (fn) => () => { if (typeof fn === "function") fn(); };
 
   return (
     <>
       <style>{`
-        /* ================= MINI PLAYER ================= */
-        .player-mini{
-          position:fixed;bottom:18px;left:calc(50% + var(--sidebar-width,0px)/2);transform:translateX(-50%);
-          width:calc(100% - var(--sidebar-width,0px) - 48px);max-width:820px;height:64px;padding:0 20px;
-          display:grid;align-items:center;gap:18px;background:#1f1f1f;
-          border:1px solid rgba(255,255,255,0.08);box-shadow:0 12px 40px rgba(0,0,0,.45);
-          border-radius:32px;z-index:1000;color:#f5f5f7;font-family:'Inter',system-ui,sans-serif;transition:all .3s ease;
+        /* ================= MINI PLAYER (ALWAYS VISIBLE, FIXED) ================= */
+        .player-mini {
+          position: fixed;
+          bottom: 20px;
+          left: calc(50% + (var(--sidebar-width, 0px) / 2));
+          transform: translateX(-50%);
+          width: calc(100% - var(--sidebar-width, 0px) - 48px);
+          max-width: 820px;
+          height: 60px;
+          padding: 0 20px;
+          display: grid;
+          grid-template-columns: 1fr minmax(0, 260px) 1fr;
+          align-items: center;
+          gap: 12px;
+          background: var(--player-bg, rgba(34, 34, 36, 0.94));
+          backdrop-filter: blur(24px) saturate(140%);
+          -webkit-backdrop-filter: blur(24px) saturate(140%);
+          border-radius: 999px;
+          border: 1px solid var(--player-border, rgba(255, 255, 255, 0.22));
+          box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+          overflow: hidden;
+          z-index: 2100;
+          color: var(--text-main, #f5f5f7);
+          font-family: 'Inter', system-ui, -apple-system, sans-serif;
+          transition: background 0.3s ease, border-color 0.3s ease;
         }
-        .player-mini.hidden{opacity:0;pointer-events:none;transform:translateX(-50%) translateY(20px)}
-        .player-mini.idle{grid-template-columns:1fr auto 1fr}
-        .player-mini.active{grid-template-columns:auto 1fr}
-        
-        .icon-btn,.play-btn{background:none;border:none;padding:0;cursor:pointer;color:inherit;display:inline-flex;align-items:center;justify-content:center;transition:opacity .15s,transform .15s}
-        .icon-btn:hover,.play-btn:hover{transform:scale(1.08)}
-        .icon-btn:disabled,.play-btn:disabled{opacity:.4;cursor:default}
-        .ti{width:26px;height:26px;fill:currentColor}
-        .icon-btn .ti{opacity:.85}
-        .play-btn .ti{width:32px;height:32px}
-        .idle-svg{width:20px;height:20px;filter:brightness(0) invert(1);opacity:.8}
-        .mini-controls{display:flex;align-items:center;gap:8px}
-        .idle-extras{display:none}
-        .player-mini.idle .idle-extras{display:inline-flex}
-        .player-mini.idle .mini-controls{gap:14px}
-        .player-mini.idle .icon-btn,.player-mini.idle .play-btn{pointer-events:none}
-        .idle-logo{display:flex;justify-content:center;opacity:.8}
-        .idle-logo svg{width:22px;height:22px;fill:currentColor}
-        .idle-art-mobile{display:none}
-        .idle-speaker{display:flex;justify-content:flex-end}
-        .mini-center{display:flex;align-items:center;gap:12px;min-width:0;cursor:pointer}
-        .mini-art{width:44px;height:44px;border-radius:7px;object-fit:cover;background:#27272a;flex-shrink:0}
-        .mini-info{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}
-        .mini-title{font-size:14px;font-weight:500;letter-spacing:-.1px;color:#f5f5f7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .mini-artist{font-size:14px;font-weight:500;letter-spacing:-.1px;color:#a1a1aa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .progress-row{display:flex;align-items:center;gap:8px;margin-top:3px}
-        .progress-time{font-size:10px;color:#a1a1aa;min-width:30px}
-        .progress-time.right{text-align:right}
-        .progress-container{position:relative;flex:1;height:3px;background:rgba(255,255,255,.12);border-radius:999px;cursor:pointer}
-        .progress-fill{position:absolute;top:0;left:0;height:100%;background:#fff;border-radius:999px;pointer-events:none}
-        .progress-container input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
 
-        /* ================= FULL SCREEN PLAYER ================= */
-        .player-full{
-          position:fixed;inset:0;z-index:2000;display:flex;flex-direction:column;overflow:hidden;color:#fff;
-          opacity:0;visibility:hidden;transform:translateY(40px);transition:all .35s ease;
-          font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#1f1f1f;
+        .mini-left, .mini-right { display: flex; align-items: center; min-width: 0; }
+        .mini-left { gap: 4px; justify-self: start; }
+        .mini-right { gap: 6px; justify-self: end; }
+
+        /* generic control button */
+        .mc-btn {
+          background: none; border: none; padding: 0; cursor: pointer;
+          width: 36px; height: 36px; border-radius: 50%;
+          display: inline-flex; align-items: center; justify-content: center;
+          color: var(--text-muted, #8e8e93);
+          transition: color 0.15s, transform 0.15s, background 0.15s;
+          flex-shrink: 0;
         }
-        .player-full.open{opacity:1;visibility:visible;transform:translateY(0)}
+        .mc-btn:hover:not(:disabled) { color: #fff; }
+        .mc-btn:active:not(:disabled) { transform: scale(0.92); }
+        .mc-btn:disabled { cursor: default; }
+        .mc-btn.active { color: var(--accent, #fa243c); }
+        .mc-btn.main { width: 46px; height: 46px; color: #c7c7cc; }
+        .mc-btn.main:hover:not(:disabled) { color: #fff; transform: scale(1.06); }
 
-        /* Top Header */
-        .full-header{display:flex;justify-content:space-between;align-items:center;padding:16px;padding-top:max(20px, env(safe-area-inset-top));z-index:20}
-        .full-close, .full-dots-btn {background:transparent;border:none;color:#fff;width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:opacity 0.2s}
-        .full-close:hover, .full-dots-btn:hover {opacity:0.7}
-        .full-close svg{width:22px;height:22px}
-        .full-dots-btn svg{width:24px;height:24px}
+        /* original PNG icons for previous / play-pause / next */
+        .mc-img img { object-fit: contain; display: block; pointer-events: none; }
+        .mc-btn.mc-img { width: 44px; height: 44px; opacity: 0.85; }
+        .mc-btn.mc-img:hover:not(:disabled) { background: rgba(255, 255, 255, 0.08); opacity: 1; }
+        .mc-btn.mc-img img { width: 28px; height: 28px; filter: brightness(0) invert(1); }
+        .mc-btn.main.mc-img { opacity: 1; }
+        .mc-btn.main.mc-img:hover:not(:disabled) { background: none; transform: scale(1.08); }
+        .mc-btn.main.mc-img img { width: 38px; height: 38px; filter: none; }
 
-        /* Dropdown Menu (Fixed position & high z-index) */
-        .menu-container { position: relative; display: flex; align-items: center; justify-content: center; }
-        .popup-menu { 
-          position: absolute; top: 40px; right: 0; 
-          background: #2c2c2e; border-radius: 12px; padding: 4px 0; min-width: 180px; 
-          box-shadow: 0 12px 32px rgba(0,0,0,0.6); 
-          z-index: 9999; 
-          animation: fadeIn 0.15s ease-out;
+        /* idle (no song yet) */
+        .player-mini.idle .mini-left .mc-btn { opacity: 0.55; }
+
+        /* volume with hover slider */
+        .vol-wrap { display: flex; align-items: center; }
+        .vol-slider {
+          width: 0; opacity: 0; margin: 0; cursor: pointer;
+          transition: width 0.2s ease, opacity 0.2s ease;
+          accent-color: #fff;
+          height: 4px;
         }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
-        .menu-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; font-size: 15px; color: #fff; cursor: pointer; transition: background 0.2s; }
-        .menu-item:hover { background: rgba(255,255,255,0.1); }
+        .vol-wrap:hover .vol-slider, .vol-slider:focus { width: 80px; opacity: 1; margin-right: 6px; }
 
-        /* Centered Container */
-        .full-body{flex:1;display:flex;flex-direction:column;padding:0 24px 32px;width:100%;max-width:440px;margin:0 auto;justify-content:center;z-index:10}
-        
-        /* Album Art (Smooth scaling based on play state) */
-        .full-art-wrapper{
-          width:100%;max-width:320px;aspect-ratio:1;border-radius:12px;overflow:hidden;margin:0 auto 32px;
-          box-shadow:0 24px 60px rgba(0,0,0,0.4);background:#27272a;
-          transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-          transform: scale(${playing ? 1 : 0.85});
+        /* center */
+        .mini-center {
+          display: flex; align-items: center; justify-content: center; gap: 12px;
+          min-width: 0; width: 100%; cursor: pointer;
+          border-radius: 10px; padding: 4px; margin: -4px;
+          transition: background 0.15s;
         }
-        .full-art{width:100%;height:100%;object-fit:cover}
+        .mini-center:hover { background: rgba(255, 255, 255, 0.04); }
+        .player-mini.idle .mini-center { cursor: default; }
+        .player-mini.idle .mini-center:hover { background: none; }
 
-        /* Info Section */
-        .full-info{width:100%;display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:24px}
-        .full-text-content{flex:1;min-width:0;padding-right:16px;text-align:left}
-        .full-title{font-size:22px;font-weight:700;margin:0 0 4px;line-height:1.2;letter-spacing:-0.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .full-artist{font-size:15px;color:rgba(255,255,255,.65);margin:0;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .mini-idle-logo { color: rgba(255, 255, 255, 0.6); display: inline-flex; }
 
-        /* Progress Area */
-        .full-progress-area{width:100%;margin-bottom:32px}
-        .full-progress-bar{position:relative;width:100%;height:6px;background:rgba(255,255,255,.2);border-radius:4px;cursor:pointer}
-        .full-progress-fill{position:absolute;top:0;left:0;height:100%;background:rgba(255,255,255,.9);border-radius:4px;pointer-events:none}
-        .full-progress-bar input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
-        .full-time-labels{display:flex;justify-content:space-between;margin-top:8px;font-size:12px;color:rgba(255,255,255,.55);font-variant-numeric:tabular-nums}
-
-        /* Controls */
-        .full-controls{display:flex;align-items:center;justify-content:space-between;padding:0 16px;margin-bottom:36px}
-        .full-controls .ti{width:48px;height:48px;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.3))}
-        .full-controls .icon-btn .ti{opacity:.95}
-        .full-controls .play-btn .ti{width:64px;height:64px}
-
-        /* Bottom Section (Volume & Queue) */
-        .full-bottom{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 4px;margin-bottom:32px}
-        .full-bottom .ti{width:22px;height:22px;opacity:.5;flex-shrink:0}
-        
-        .full-volume-bar{flex:1;height:6px;background:rgba(255,255,255,.2);border-radius:4px;position:relative;cursor:pointer}
-        .full-volume-fill{position:absolute;top:0;left:0;height:100%;background:rgba(255,255,255,.9);border-radius:4px;pointer-events:none}
-        .full-volume-bar input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
-        
-        .full-queue{display:flex;justify-content:center;padding-bottom:max(16px, env(safe-area-inset-bottom))}
-        .full-queue .ti{width:26px;height:26px;opacity:.6}
-
-        /* Mobile Adjustments */
-        @media(max-width:640px){
-          .player-mini{left:8px;right:8px;bottom:8px;transform:none;width:auto;height:56px;padding:0 12px;border-radius:28px;gap:10px}
-          .player-mini.hidden{transform:translateY(20px)}
-          .player-mini.active,.player-mini.idle{grid-template-columns:auto 1fr auto}
-          .idle-logo,.idle-extras,.idle-speaker{display:none!important}
-          .idle-art-mobile{display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:7px;background:#27272a}
-          .idle-art-mobile svg{width:24px;height:24px;fill:#f5f5f7;opacity:.9}
-          .mini-controls{display:none}
-          .mini-art{width:40px;height:40px;border-radius:7px}
-          .mini-center{gap:10px}
-          .mini-title,.mini-artist{font-size:13px;font-weight:500}
-          .progress-row{display:none}
-          .mobile-controls{display:flex;align-items:center;gap:8px;justify-self:end;flex-shrink:0}
-          .mobile-controls .ti{width:28px;height:28px}
-          .mobile-controls .play-btn .ti{width:30px;height:30px}
-          
-          .full-art-wrapper{max-width:280px}
-          .full-title{font-size:20px}
-          .full-artist{font-size:14px}
+        .mini-art {
+          width: 40px; height: 40px; border-radius: 8px; object-fit: cover;
+          flex-shrink: 0; background: #27272a;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         }
-        @media(min-width:641px){.mobile-controls{display:none}.idle-art-mobile{display:none!important}}
+        .mini-art-placeholder {
+          width: 40px; height: 40px; border-radius: 8px; flex-shrink: 0;
+          background: #27272a; color: rgba(255, 255, 255, 0.4);
+          display: inline-flex; align-items: center; justify-content: center;
+        }
+        .mini-info { display: flex; flex-direction: column; justify-content: center; gap: 3px; flex: 1; min-width: 0; }
+        .mini-title { font-size: 14px; font-weight: 600; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .mini-artist { font-size: 12px; color: var(--text-muted, #a1a1aa); line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .progress-row { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
+        .progress-time { font-size: 11px; color: var(--text-muted, #a1a1aa); font-variant-numeric: tabular-nums; min-width: 32px; flex-shrink: 0; }
+        .progress-time.right { text-align: right; }
+        .progress-container {
+          position: relative; flex: 1; height: 4px;
+          background: var(--hover-bg, rgba(255, 255, 255, 0.12));
+          border-radius: 999px; cursor: pointer;
+        }
+        .progress-fill {
+          position: absolute; top: 0; left: 0; height: 100%;
+          background: var(--text-main, #fff); border-radius: 999px; pointer-events: none;
+          transition: background 0.15s;
+        }
+        .progress-container:hover .progress-fill { background: #1db954; }
+        .progress-container input[type="range"] {
+          position: absolute; inset: 0; width: 100%; height: 100%;
+          opacity: 0; cursor: pointer; margin: 0;
+        }
+
+        /* ================= FULL-SCREEN PLAYER ================= */
+        .player-full {
+          position: fixed; inset: 0; z-index: 2000;
+          display: flex; flex-direction: column;
+          color: #fff;
+          font-family: 'Inter', system-ui, -apple-system, sans-serif;
+          overflow: hidden;
+          opacity: 0; visibility: hidden;
+          transform: translateY(40px);
+          transition: opacity 0.32s ease, transform 0.32s ease, visibility 0.32s;
+        }
+        .player-full.open { opacity: 1; visibility: visible; transform: translateY(0); }
+
+        .player-full-bg {
+          position: absolute; inset: -40px;
+          background-size: cover; background-position: center;
+          filter: blur(60px) saturate(180%) brightness(0.5);
+          transform: scale(1.2);
+          z-index: -2;
+        }
+        .player-full-overlay {
+          position: absolute; inset: 0; z-index: -1;
+          background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.6) 60%, rgba(0,0,0,0.9) 100%);
+        }
+
+        .full-header {
+          display: flex; align-items: center; justify-content: space-between;
+          padding: 20px 24px; flex-shrink: 0;
+        }
+        .full-header-label {
+          font-size: 12px; text-transform: uppercase; letter-spacing: 0.15em;
+          color: rgba(255, 255, 255, 0.7); font-weight: 500;
+        }
+        .full-close {
+          background: rgba(255, 255, 255, 0.1);
+          border: none; color: #fff; width: 40px; height: 40px;
+          border-radius: 50%; cursor: pointer;
+          display: inline-flex; align-items: center; justify-content: center;
+          transition: background 0.15s, transform 0.15s;
+        }
+        .full-close:hover { background: rgba(255, 255, 255, 0.2); }
+        .full-close:active { transform: scale(0.92); }
+        .full-close svg { display: block; }
+
+        .full-body {
+          flex: 1; display: flex; flex-direction: column;
+          align-items: center; justify-content: center;
+          padding: 0 24px;
+          padding-bottom: 116px; /* clear of the always-visible mini player */
+          min-height: 0;
+          overflow: hidden;
+        }
+
+        .full-art-wrapper {
+          width: min(78vw, 78vh, 420px);
+          aspect-ratio: 1;
+          border-radius: 16px;
+          overflow: hidden;
+          box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1);
+          flex-shrink: 1;
+          margin-bottom: 32px;
+        }
+        .full-art { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+        .full-info {
+          width: 100%; max-width: 480px; text-align: left;
+          margin-bottom: 20px;
+        }
+        .full-title {
+          font-size: clamp(20px, 4vw, 26px);
+          font-weight: 700; line-height: 1.2; letter-spacing: -0.02em;
+          white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+          margin-bottom: 4px;
+        }
+        .full-artist {
+          font-size: 15px; color: rgba(255, 255, 255, 0.7);
+          white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+
+        .full-progress {
+          width: 100%; max-width: 480px;
+          display: flex; flex-direction: column; gap: 6px;
+          margin-bottom: 28px;
+        }
+        .full-progress-container {
+          position: relative; width: 100%; height: 4px;
+          background: rgba(255, 255, 255, 0.25);
+          border-radius: 999px;
+        }
+        .full-progress-fill {
+          position: absolute; top: 0; left: 0; height: 100%;
+          background: #fff; border-radius: 999px; pointer-events: none;
+        }
+        .full-progress-container input[type="range"] {
+          position: absolute; inset: -8px 0; width: 100%; height: 20px;
+          opacity: 0; cursor: pointer; margin: 0;
+        }
+        .full-progress-times {
+          display: flex; justify-content: space-between;
+          font-size: 12px; color: rgba(255, 255, 255, 0.7);
+          font-variant-numeric: tabular-nums;
+        }
+
+        .full-controls {
+          display: flex; align-items: center; justify-content: center;
+          gap: 20px;
+          width: 100%; max-width: 480px;
+          margin-bottom: 24px;
+        }
+        .full-ctrl {
+          background: none; border: none; padding: 0;
+          cursor: pointer; width: 64px; height: 64px; border-radius: 50%;
+          display: inline-flex; align-items: center; justify-content: center;
+          transition: background 0.15s, transform 0.15s, opacity 0.15s;
+          opacity: 0.9;
+        }
+        .full-ctrl:hover { background: rgba(255, 255, 255, 0.1); opacity: 1; }
+        .full-ctrl:active { transform: scale(0.92); }
+        .full-ctrl img { width: 40px; height: 40px; object-fit: contain; display: block; pointer-events: none; filter: brightness(0) invert(1); }
+
+        .full-play-btn {
+          background: none; border: none; padding: 0;
+          width: 72px; height: 72px; border-radius: 50%;
+          display: inline-flex; align-items: center; justify-content: center;
+          cursor: pointer; transition: transform 0.15s;
+        }
+        .full-play-btn:hover { transform: scale(1.08); }
+        .full-play-btn:active { transform: scale(0.94); }
+        .full-play-btn img { width: 60px; height: 60px; object-fit: contain; display: block; pointer-events: none; }
+
+        /* ================= RESPONSIVE ================= */
+        @media (max-width: 1100px) {
+          .player-mini { grid-template-columns: auto minmax(0, 1fr) auto; }
+          .mini-left .hide-md, .mini-right .hide-md { display: none; }
+        }
+
+        @media (max-width: 640px) {
+          .player-mini {
+            left: 8px; right: 8px; bottom: 8px;
+            transform: none; width: auto;
+            height: 56px; padding: 0 14px;
+            grid-template-columns: minmax(0, 1fr) auto; gap: 8px;
+          }
+          .mini-center { order: 1; justify-content: flex-start; gap: 10px; }
+          .player-mini.idle .mini-center { justify-content: center; }
+          .mini-left { order: 2; gap: 2px; }
+          .mini-right { display: none; }
+          .mini-left .hide-sm { display: none; }
+          .mini-art, .mini-art-placeholder { width: 36px; height: 36px; border-radius: 6px; }
+          .mini-info { gap: 2px; }
+          .mini-title { font-size: 13px; }
+          .mini-artist { font-size: 11px; }
+          .progress-row { gap: 0; margin-top: 1px; }
+          .progress-time { display: none; }
+          .progress-container { height: 3px; }
+          .mc-btn { width: 34px; height: 34px; }
+          .mc-btn.mc-img { width: 38px; height: 38px; }
+          .mc-btn.mc-img img { width: 24px; height: 24px; }
+          .mc-btn.main.mc-img img { width: 32px; height: 32px; }
+
+          .full-header { padding: 16px; }
+          .full-body { padding-bottom: 88px; }
+          .full-art-wrapper { width: min(80vw, 60vh, 340px); margin-bottom: 24px; }
+          .full-controls { gap: 12px; margin-bottom: 16px; }
+          .full-play-btn { width: 64px; height: 64px; }
+          .full-play-btn img { width: 52px; height: 52px; }
+          .full-ctrl { width: 54px; height: 54px; }
+          .full-ctrl img { width: 34px; height: 34px; }
+        }
+
+        @media (max-width: 380px) {
+          .player-mini { height: 52px; padding: 0 10px; }
+          .full-body { padding-bottom: 84px; }
+          .mini-art, .mini-art-placeholder { width: 32px; height: 32px; }
+          .mc-btn { width: 30px; height: 30px; }
+          .mc-btn.mc-img { width: 34px; height: 34px; }
+          .mc-btn.mc-img img { width: 22px; height: 22px; }
+          .mc-btn.main.mc-img img { width: 28px; height: 28px; }
+          .full-art-wrapper { width: min(80vw, 45vh, 280px); }
+        }
       `}</style>
 
-      {/* MINI PLAYER */}
-      <div className={`player-mini ${expanded ? "hidden" : ""} ${hasTrack ? "active" : "idle"}`}>
-        <div className="mini-controls">
-          <button className="icon-btn idle-extras"><svg className="idle-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg></button>
-          <SkipBtn dir="prev" onClick={prev} disabled={off} />
-          <PlayBtn playing={playing} onClick={playPause} disabled={off} />
-          <SkipBtn dir="next" onClick={next} disabled={off} />
-          <button className="icon-btn idle-extras"><svg className="idle-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 1l4 4-4 4M3 11V9a4 4 0 014-4h14M7 23l-4-4 4-4M21 13v2a4 4 0 01-4 4H3"/></svg></button>
+      {/* ============ MINI PLAYER (always rendered on every page) ============ */}
+      <div className={`player-mini ${hasTrack ? "" : "idle"}`}>
+        {/* LEFT — transport controls */}
+        <div className="mini-left">
+          <button
+            className={`mc-btn hide-sm hide-md ${shuffle ? "active" : ""}`}
+            onClick={call(toggleShuffle)}
+            aria-label="Shuffle"
+            disabled={!hasTrack}
+          >
+            <I.Shuffle />
+          </button>
+          <button className="mc-btn mc-img" onClick={prev} aria-label="Previous" disabled={!hasTrack}>
+            <img src="/fastbackwardicon.png" alt="" />
+          </button>
+          <button
+            className="mc-btn main mc-img"
+            onClick={playPause}
+            aria-label={playing ? "Pause" : "Play"}
+            disabled={!hasTrack}
+          >
+            <img src={playing ? "/pause_icon_transparent.png" : "/playicon.png"} alt="" />
+          </button>
+          <button className="mc-btn mc-img" onClick={next} aria-label="Next" disabled={!hasTrack}>
+            <img src="/fastforwardicon.png" alt="" />
+          </button>
+          <button
+            className={`mc-btn hide-sm hide-md ${repeat ? "active" : ""}`}
+            onClick={call(toggleRepeat)}
+            aria-label="Repeat"
+            disabled={!hasTrack}
+          >
+            <I.Repeat />
+          </button>
         </div>
 
-        {hasTrack ? (
-          <div className="mini-center" onClick={() => setExpanded(true)}>
-            <img src={current.artwork} alt="Art" className="mini-art" />
-            <div className="mini-info">
-              <div className="mini-title">{current.title}</div>
-              <div className="mini-artist">{current.artist}</div>
-              <div className="progress-row">
-                <span className="progress-time">{fmt(currentTime)}</span>
-                <div className="progress-container" onClick={(e) => e.stopPropagation()}>
-                  <div className="progress-fill" style={{ width: `${progress}%` }} />
-                  <input type="range" min="0" max={duration || 0} step="0.1" value={currentTime || 0} onChange={(e) => seek(Number(e.target.value))} />
+        {/* CENTER — Apple logo when idle, now playing when a song is loaded */}
+        <div
+          className="mini-center"
+          onClick={toggleExpanded}
+          role={hasTrack ? "button" : undefined}
+          tabIndex={hasTrack ? 0 : -1}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              toggleExpanded();
+            }
+          }}
+          aria-label={hasTrack ? (expanded ? "Close full screen player" : "Open full screen player") : "Apple Music"}
+        >
+          {!hasTrack ? (
+            <span className="mini-idle-logo" aria-hidden="true"><I.Apple /></span>
+          ) : (
+            <>
+              {track.artwork ? (
+                <img src={track.artwork} alt={`${track.title} artwork`} className="mini-art" />
+              ) : (
+                <div className="mini-art-placeholder" aria-hidden="true"><I.NoteArt /></div>
+              )}
+              <div className="mini-info">
+                <div className="mini-title">{track.title}</div>
+                <div className="mini-artist">{track.artist}</div>
+                <div className="progress-row">
+                  <span className="progress-time">{fmt(currentTime)}</span>
+                  <div className="progress-container" onClick={(e) => e.stopPropagation()}>
+                    <div className="progress-fill" style={{ width: `${progress}%` }} />
+                    <input
+                      type="range" min="0" max={duration || 0} step="0.1"
+                      value={currentTime || 0}
+                      onChange={(e) => seek(Number(e.target.value))}
+                      aria-label="Seek"
+                    />
+                  </div>
+                  <span className="progress-time right">{fmt(duration)}</span>
                 </div>
-                <span className="progress-time right">{fmt(duration)}</span>
               </div>
-            </div>
-          </div>
-        ) : (
-          <>
-            <div className="idle-logo"><Icons.Note /></div>
-            <div className="idle-speaker"><svg className="idle-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 5L6 9H2v6h4l5 4V5zM15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14"/></svg></div>
-            <div className="idle-art-mobile"><Icons.Note /></div>
-          </>
-        )}
+            </>
+          )}
+        </div>
 
-        <div className="mobile-controls">
-          <PlayBtn playing={playing} onClick={playPause} disabled={off} />
-          <SkipBtn dir="next" onClick={next} disabled={off} />
+        {/* RIGHT — lyrics, queue, volume */}
+        <div className="mini-right">
+          <button className="mc-btn hide-md" onClick={call(toggleLyrics)} aria-label="Lyrics">
+            <I.Lyrics />
+          </button>
+          <button className="mc-btn hide-md" onClick={call(toggleQueue)} aria-label="Queue">
+            <I.Queue />
+          </button>
+          <div className="vol-wrap">
+            {typeof setVolume === "function" && (
+              <input
+                className="vol-slider"
+                type="range" min="0" max="1" step="0.01"
+                value={typeof volume === "number" ? volume : 1}
+                onChange={(e) => setVolume(Number(e.target.value))}
+                aria-label="Volume"
+              />
+            )}
+            <button className="mc-btn" aria-label="Volume">
+              <I.Volume />
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* FULL SCREEN PLAYER */}
+      {/* ============ FULL-SCREEN PLAYER (only when a track exists) ============ */}
       {hasTrack && (
-        <div className={`player-full ${expanded ? "open" : ""}`}>
+        <div className={`player-full ${expanded ? "open" : ""}`} aria-hidden={!expanded}>
+          <div className="player-full-bg" style={{ backgroundImage: `url(${track.artwork})` }} />
+          <div className="player-full-overlay" />
+
           <div className="full-header">
-            <button className="full-close" onClick={() => setExpanded(false)} aria-label="Close">
-              <Icons.Chevron />
+            <span className="full-header-label">Now Playing</span>
+            <button className="full-close" onClick={() => setExpanded(false)} aria-label="Close full screen player">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
             </button>
-            
-            <div className="menu-container" ref={menuRef}>
-              <button className="full-dots-btn" onClick={() => setMenuOpen(!menuOpen)} aria-label="More">
-                <Icons.Dots />
-              </button>
-              
-              {menuOpen && (
-                <div className="popup-menu">
-                  <div className="menu-item" onClick={handleShare}>
-                    <Icons.Share /> Share Song
-                  </div>
-                  <div className="menu-item" onClick={handleCopy}>
-                    <Icons.Link /> Copy Link
-                  </div>
-                </div>
-              )}
-            </div>
           </div>
 
           <div className="full-body">
             <div className="full-art-wrapper">
-              <img src={current.artwork} alt="Art" className="full-art" />
+              <img src={track.artwork} alt={`${track.title} artwork`} className="full-art" />
             </div>
 
             <div className="full-info">
-              <div className="full-text-content">
-                <div className="full-title">{current.title}</div>
-                <div className="full-artist">{current.artist}</div>
-              </div>
+              <div className="full-title">{track.title}</div>
+              <div className="full-artist">{track.artist}</div>
             </div>
 
-            <div className="full-progress-area">
-              <div className="full-progress-bar">
+            <div className="full-progress">
+              <div className="full-progress-container">
                 <div className="full-progress-fill" style={{ width: `${progress}%` }} />
-                <input type="range" min="0" max={duration || 0} step="0.1" value={currentTime || 0} onChange={(e) => seek(Number(e.target.value))} />
+                <input
+                  type="range" min="0" max={duration || 0} step="0.1"
+                  value={currentTime || 0}
+                  onChange={(e) => seek(Number(e.target.value))}
+                  aria-label="Seek"
+                />
               </div>
-              <div className="full-time-labels">
+              <div className="full-progress-times">
                 <span>{fmt(currentTime)}</span>
-                <span>{remaining}</span>
+                <span>{fmt(duration)}</span>
               </div>
             </div>
 
             <div className="full-controls">
-              <SkipBtn dir="prev" onClick={prev} />
-              <PlayBtn playing={playing} onClick={playPause} />
-              <SkipBtn dir="next" onClick={next} />
+              <button className="full-ctrl" onClick={prev} aria-label="Previous">
+                <img src="/fastbackwardicon.png" alt="" />
+              </button>
+              <button className="full-play-btn" onClick={playPause} aria-label={playing ? "Pause" : "Play"}>
+                <img src={playing ? "/pause_icon_transparent.png" : "/playicon.png"} alt="" />
+              </button>
+              <button className="full-ctrl" onClick={next} aria-label="Next">
+                <img src="/fastforwardicon.png" alt="" />
+              </button>
             </div>
-
-            <div className="full-bottom">
-              <Icons.VolLow />
-              <div className="full-volume-bar">
-                <div className="full-volume-fill" style={{ width: `${volume}%` }} />
-                <input type="range" min="0" max="100" value={volume} onChange={(e) => setVolume(Number(e.target.value))} />
-              </div>
-              <Icons.VolHigh />
-            </div>
-
-            <div className="full-queue"><Icons.Queue /></div>
           </div>
         </div>
       )}

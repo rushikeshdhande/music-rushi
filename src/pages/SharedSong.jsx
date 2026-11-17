@@ -24,10 +24,10 @@ export default function SharedSong() {
     const isMobile = /android|iphone|ipad/i.test(navigator.userAgent);
     if (!isMobile) return;
     
-    const deepLink =
-      `intent://music-rushi.vercel.app/in/album/${slug}/${id}` +
-      `#Intent;scheme=https;package=${APP_PACKAGE};` +
-      `S.browser_fallback_url=${encodeURIComponent(window.location.href)};end`;
+ const deepLink =
+  `intent://music-rushi.vercel.app/in/song/${slug || "song"}/${id}` +
+  `#Intent;scheme=https;package=${APP_PACKAGE};` +
+  `S.browser_fallback_url=${encodeURIComponent(window.location.href)};end`;
       
     const t = setTimeout(() => {
       try { window.location.href = deepLink; } catch {}

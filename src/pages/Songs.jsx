@@ -1,10 +1,17 @@
-﻿import React from "react";
+﻿
+import React, { useEffect, useState } from "react";
 import { usePlayer } from "../contexts/PlayerContext";
 import { ALL_SONGS } from "../data/remoteAlbums";
 import { shareSong } from "../lib/shareUrl";
 
 const Songs = () => {
   const { loadAndPlay, current } = usePlayer();
+  const [songs, setSongs] = useState(() => [...ALL_SONGS]);
+
+  useEffect(() => {
+    // Read the latest API-loaded songs
+    setSongs([...ALL_SONGS]);
+  }, []);
 
   return (
     <div className="songs-page">
@@ -17,7 +24,6 @@ const Songs = () => {
           color: #f5f5f7;
         }
 
-        /* ===== Header ===== */
         .songs-header {
           display: flex;
           align-items: flex-end;
@@ -25,17 +31,20 @@ const Songs = () => {
           gap: 16px;
           margin-bottom: 8px;
         }
+
         .songs-title {
           font-size: 2.25rem;
           font-weight: 700;
           letter-spacing: -0.02em;
           margin: 0;
         }
+
         .songs-count {
           color: #a1a1aa;
           font-size: 0.9rem;
           margin: 6px 0 0;
         }
+
         .play-all-btn {
           display: inline-flex;
           align-items: center;
@@ -51,14 +60,17 @@ const Songs = () => {
           transition: transform 0.15s, box-shadow 0.2s, background 0.2s;
           box-shadow: 0 4px 16px rgba(29, 185, 84, 0.25);
         }
+
         .play-all-btn:hover {
           background: #1ed760;
           transform: translateY(-1px);
           box-shadow: 0 6px 20px rgba(29, 185, 84, 0.35);
         }
-        .play-all-btn:active { transform: translateY(0); }
 
-        /* ===== List ===== */
+        .play-all-btn:active {
+          transform: translateY(0);
+        }
+
         .song-list {
           list-style: none;
           padding: 0;
@@ -78,9 +90,18 @@ const Songs = () => {
           transition: background 0.15s;
           cursor: pointer;
         }
-        .song-row:hover { background: rgba(255, 255, 255, 0.06); }
-        .song-row.active { background: rgba(29, 185, 84, 0.12); }
-        .song-row.active .song-title { color: #1db954; }
+
+        .song-row:hover {
+          background: rgba(255, 255, 255, 0.06);
+        }
+
+        .song-row.active {
+          background: rgba(29, 185, 84, 0.12);
+        }
+
+        .song-row.active .song-title {
+          color: #1db954;
+        }
 
         .song-index {
           font-size: 0.85rem;
@@ -97,7 +118,10 @@ const Songs = () => {
           background: #27272a;
         }
 
-        .song-info { min-width: 0; }
+        .song-info {
+          min-width: 0;
+        }
+
         .song-title {
           font-size: 0.95rem;
           font-weight: 500;
@@ -106,6 +130,7 @@ const Songs = () => {
           text-overflow: ellipsis;
           margin-bottom: 2px;
         }
+
         .song-artist {
           font-size: 0.8rem;
           color: #a1a1aa;
@@ -121,7 +146,10 @@ const Songs = () => {
           opacity: 0.6;
           transition: opacity 0.15s;
         }
-        .song-row:hover .song-actions { opacity: 1; }
+
+        .song-row:hover .song-actions {
+          opacity: 1;
+        }
 
         .icon-btn {
           background: transparent;
@@ -137,55 +165,93 @@ const Songs = () => {
           justify-content: center;
           transition: background 0.15s, color 0.15s, transform 0.15s;
         }
+
         .icon-btn:hover {
           background: rgba(255, 255, 255, 0.1);
           color: #fff;
         }
-        .icon-btn:active { transform: scale(0.92); }
 
-        .share-btn:hover { color: #4da3ff; }
+        .icon-btn:active {
+          transform: scale(0.92);
+        }
 
-        /* ===== Playing indicator ===== */
+        .share-btn:hover {
+          color: #4da3ff;
+        }
+
         .playing-indicator {
           display: inline-flex;
           align-items: flex-end;
           gap: 2px;
           height: 14px;
         }
+
         .playing-indicator span {
           width: 3px;
           background: #1db954;
           border-radius: 1px;
           animation: bounce 0.9s ease-in-out infinite;
         }
-        .playing-indicator span:nth-child(1) { height: 60%; animation-delay: -0.2s; }
-        .playing-indicator span:nth-child(2) { height: 100%; animation-delay: -0.4s; }
-        .playing-indicator span:nth-child(3) { height: 40%; animation-delay: 0s; }
+
+        .playing-indicator span:nth-child(1) {
+          height: 60%;
+          animation-delay: -0.2s;
+        }
+
+        .playing-indicator span:nth-child(2) {
+          height: 100%;
+          animation-delay: -0.4s;
+        }
+
+        .playing-indicator span:nth-child(3) {
+          height: 40%;
+          animation-delay: 0s;
+        }
+
         @keyframes bounce {
           0%, 100% { transform: scaleY(0.4); }
           50% { transform: scaleY(1); }
         }
 
-        /* ===== Empty ===== */
         .songs-empty {
           text-align: center;
           padding: 64px 24px;
           color: #a1a1aa;
         }
+
         .songs-empty .empty-icon {
           font-size: 2.5rem;
           margin-bottom: 12px;
           opacity: 0.6;
         }
 
-        /* ===== Responsive ===== */
         @media (max-width: 600px) {
-          .songs-page { padding: 20px 16px 96px; }
-          .songs-title { font-size: 1.75rem; }
-          .songs-header { flex-direction: column; align-items: flex-start; }
-          .song-row { grid-template-columns: 44px 1fr auto; gap: 10px; }
-          .song-index { display: none; }
-          .song-art { width: 44px; height: 44px; }
+          .songs-page {
+            padding: 20px 16px 96px;
+          }
+
+          .songs-title {
+            font-size: 1.75rem;
+          }
+
+          .songs-header {
+            flex-direction: column;
+            align-items: flex-start;
+          }
+
+          .song-row {
+            grid-template-columns: 44px 1fr auto;
+            gap: 10px;
+          }
+
+          .song-index {
+            display: none;
+          }
+
+          .song-art {
+            width: 44px;
+            height: 44px;
+          }
         }
       `}</style>
 
@@ -193,33 +259,44 @@ const Songs = () => {
         <div>
           <h1 className="songs-title">Songs</h1>
           <p className="songs-count">
-            {ALL_SONGS.length} {ALL_SONGS.length === 1 ? "song" : "songs"} in your library
+            {songs.length} {songs.length === 1 ? "song" : "songs"} in your library
           </p>
         </div>
-        <button className="play-all-btn" onClick={() => loadAndPlay(ALL_SONGS, 0)}>
+
+        <button
+          className="play-all-btn"
+          onClick={() => {
+            if (songs.length > 0) loadAndPlay(songs, 0);
+          }}
+          disabled={songs.length === 0}
+        >
           ▶ Play All
         </button>
       </header>
 
-      {ALL_SONGS.length === 0 ? (
+      {songs.length === 0 ? (
         <div className="songs-empty">
           <div className="empty-icon">🎵</div>
           <p>No songs in your library yet</p>
         </div>
       ) : (
         <ul className="song-list">
-          {ALL_SONGS.map((song, i) => {
-            const isActive = current?.id === song.id;
+          {songs.map((song, i) => {
+            const isActive =
+              String(current?.id) === String(song.id);
+
             return (
               <li
                 key={song.id}
                 className={`song-row ${isActive ? "active" : ""}`}
-                onClick={() => loadAndPlay(ALL_SONGS, i)}
+                onClick={() => loadAndPlay(songs, i)}
               >
                 <span className="song-index">
                   {isActive ? (
                     <span className="playing-indicator">
-                      <span /><span /><span />
+                      <span />
+                      <span />
+                      <span />
                     </span>
                   ) : (
                     i + 1
@@ -227,7 +304,7 @@ const Songs = () => {
                 </span>
 
                 <img
-                  src={song.artwork}
+                  src={song.artwork || song.thumbnail || ""}
                   alt={`${song.title} artwork`}
                   className="song-art"
                   loading="lazy"
